@@ -1,6 +1,6 @@
 // Import the scraping logic from the file
-const { scrapePrice } = require('./scraper')
-const cron = require('node-cron')
+import { scrapePrice, ScrapeResult } from './scraper';
+import * as cron from 'node-cron';
 
 // Define the daily schedule using cron syntax:
 // '0 1 * * *' means: At minute 0, hour 1 (1:00 AM), every day of the month, every month, every day of the week.
@@ -11,7 +11,8 @@ console.error("Starting Daily Playwright Scheduler using node-cron pattern...");
 // Schedule the scrapePrice function to run daily
 cron.schedule(DAILY_CRON_SCHEDULE, async () => {
     console.error(`\n--- Running Daily Scrape Job at ${new Date().toLocaleTimeString()} ---`);
-    await scrapePrice();
+    const result: ScrapeResult[] = await scrapePrice();
+    console.log(JSON.stringify(result));
     console.error(`--- Job Finished ---`);
 });
 

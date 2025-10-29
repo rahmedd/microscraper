@@ -1,6 +1,6 @@
 // Import the necessary modules from Playwright
-const { chromium } = require('playwright');
-const dotenv = require('dotenv');
+import { chromium, Browser, Page } from 'playwright';
+import * as dotenv from 'dotenv';
 dotenv.config();
 
 // The URL of the product page to scrape
@@ -8,18 +8,28 @@ const PRODUCT_URL = process.env.CS_URL;
 // The specific selector requested by the user
 const PRICE_SELECTOR = '#pricing';
 
+// Define a type for the structured result
+export type ScrapeResult = {
+    productUrl: string;
+    priceSelector: string;
+    extractedPrice: string | null;
+    priceFormatted: string | null;
+    status: "SUCCESS" | "FAILURE_MISSING_CONTENT" | "FAILURE_EXCEPTION";
+    errorMessage?: string;
+};
+
 /**
  * Launches a Playwright browser, navigates to the product page,
  * waits for the specific pricing element, and extracts its 'content' attribute.
  *
  * NOTE: This function is now exported for use by a separate scheduler file.
  */
-async function scrapePrice() {
+async function scrapePrice(): Promise<ScrapeResult[]> {
     // Use console.error for all status/debugging messages to keep stdout clean for JSON.
     console.error("Starting Playwright to scrape...");
 
     // Launch Chromium in headless mode, but use arguments to bypass common bot detection
-    const browser = await chromium.launch({
+    const browser: Browser = await chromium.launch({
         headless: true, // Switched back to true, with anti-detection arguments below
         args: [
             // Adds common arguments to mimic a real browser and avoid detection
@@ -28,17 +38,23 @@ async function scrapePrice() {
             // Disables the most common Playwright detection (navigator.webdriver)
             '--disable-blink-features=AutomationControlled', 
         ],
-        // Set a realistic viewport size to match a typical desktop browser
-        viewport: { width: 1280, height: 720 } 
     });
     
-    // Create a new page and set a common desktop user agent string
-    const page = await browser.newPage({
+    const context = await browser.newContext({
+        viewport: { width: 1280, height: 720 },
         userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
     });
 
+    const page: Page = await context.newPage();
+
     // Initialize the array that will hold the final structured result for n8n
-    let finalResult = [];
+    let finalResult: ScrapeResult[] = [];
+
+    if (!PRODUCT_URL) {
+        console.error("Error: CS_URL environment variable is not set.");
+        await browser.close();
+        return [];
+    }
 
     try {
         // 1. Navigate to the target URL
@@ -74,9 +90,10 @@ async function scrapePrice() {
             console.error(`Element ${PRICE_SELECTOR} found, but 'content' attribute was empty or null.`);
         }
 
-    } catch (e) {
+    } catch (e: unknown) {
         // General error handling for navigation or selection failures
-        console.error("\nAn error occurred during scraping:", e.message);
+        const error = e as Error;
+        console.error("\nAn error occurred during scraping:", error.message);
         console.error("The selector might not exist or the page structure may have changed.");
         
         // Log a failure result even on exception
@@ -86,19 +103,16 @@ async function scrapePrice() {
             extractedPrice: null,
             priceFormatted: null,
             status: "FAILURE_EXCEPTION",
-            errorMessage: e.message
+            errorMessage: error.message
         });
 
     } finally {
-        // Output the JSON array to standard output (stdout) for n8n consumption
-        // This output is what an external process (like n8n) would read.
-        console.log(JSON.stringify(finalResult));
-        
         // Ensure the browser is closed
         await browser.close();
         console.error("\nPlaywright browser closed.");
     }
+    return finalResult;
 }
 
 // Export the function for the scheduler to use
-module.exports = { scrapePrice };
+export { scrapePrice };
