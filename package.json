@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc",
-    "start": "pnpm run build && node dist/scheduler.js"
+    "start": "pnpm run build && node dist/src/scheduler.js"
   },
   "keywords": [],
   "author": "",
