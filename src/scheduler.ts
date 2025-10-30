@@ -1,5 +1,5 @@
 // Import the scraping logic from the file
-import { scrapePrice, type ScrapeResult } from './scraper.js'
+import { scrapePrice, type ScrapeResult } from './scraper'
 import * as cron from 'node-cron'
 import * as dotenv from 'dotenv'
 dotenv.config()
