@@ -3,8 +3,6 @@ import { chromium, Browser, Page } from 'playwright';
 import * as dotenv from 'dotenv';
 dotenv.config();
 
-// The URL of the product page to scrape
-const PRODUCT_URL = process.env.CS_URL;
 // The specific selector requested by the user
 const PRICE_SELECTOR = '#pricing';
 
@@ -24,7 +22,7 @@ export type ScrapeResult = {
  *
  * NOTE: This function is now exported for use by a separate scheduler file.
  */
-async function scrapePrice(): Promise<ScrapeResult[]> {
+async function scrapePrice(productUrl: string): Promise<ScrapeResult[]> {
     // Use console.error for all status/debugging messages to keep stdout clean for JSON.
     console.error("Starting Playwright to scrape...");
 
@@ -50,16 +48,10 @@ async function scrapePrice(): Promise<ScrapeResult[]> {
     // Initialize the array that will hold the final structured result for n8n
     let finalResult: ScrapeResult[] = [];
 
-    if (!PRODUCT_URL) {
-        console.error("Error: CS_URL environment variable is not set.");
-        await browser.close();
-        return [];
-    }
-
     try {
         // 1. Navigate to the target URL
-        console.error(`Navigating to ${PRODUCT_URL}`);
-        await page.goto(PRODUCT_URL, { timeout: 60000 });
+        console.error(`Navigating to ${productUrl}`);
+        await page.goto(productUrl, { timeout: 60000 });
 
         // 2. Wait for the specific element to be present in the DOM.
         console.error(`Waiting for element: ${PRICE_SELECTOR}`);
@@ -72,7 +64,7 @@ async function scrapePrice(): Promise<ScrapeResult[]> {
         // 4. Structure the output as an array of objects for n8n compatibility
         if (priceContent) {
             finalResult.push({
-                productUrl: PRODUCT_URL,
+                productUrl: productUrl,
                 priceSelector: PRICE_SELECTOR,
                 extractedPrice: priceContent,
                 priceFormatted: `$${priceContent}`,
@@ -81,7 +73,7 @@ async function scrapePrice(): Promise<ScrapeResult[]> {
             console.error("\nExtraction successful. JSON output prepared.");
         } else {
             finalResult.push({
-                productUrl: PRODUCT_URL,
+                productUrl: productUrl,
                 priceSelector: PRICE_SELECTOR,
                 extractedPrice: null,
                 priceFormatted: null,
@@ -98,7 +90,7 @@ async function scrapePrice(): Promise<ScrapeResult[]> {
         
         // Log a failure result even on exception
         finalResult.push({
-            productUrl: PRODUCT_URL,
+            productUrl: productUrl,
             priceSelector: PRICE_SELECTOR,
             extractedPrice: null,
             priceFormatted: null,

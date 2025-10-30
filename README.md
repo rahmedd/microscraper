@@ -10,6 +10,8 @@
 
 ❌ Alert price change
 
+❌ Alert products of interest
+
 ## Setup
 Modify .env with product URL
 
