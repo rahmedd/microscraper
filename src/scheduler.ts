@@ -1,17 +1,23 @@
-// Import the scraping logic from the file
 import { scrapePrice, type ScrapeResult } from './scraper'
 import * as cron from 'node-cron'
 import * as dotenv from 'dotenv'
-dotenv.config()
+import { app } from './slack'
 
-// Define the daily schedule using cron syntax:
-// '0 1 * * *' means: At minute 0, hour 1 (1:00 AM), every day of the month, every month, every day of the week.
-const DAILY_CRON_SCHEDULE = '* * * * *'
+dotenv.config();
+
+(async () => {
+	// Start your app
+	await app.start(process.env.PORT || 3000)
+	app.logger.info('⚡️ Bolt app is running!')
+})()
+
+const isDevMode = process.env.NODE_ENV === 'dev'
+const CRON_SCHEDULE = isDevMode ? '* * * * *' : '0 12 * * *' // Every minute in dev, daily at 12 PM in production
 
 console.error('Starting Daily Playwright Scheduler using node-cron pattern...')
 
 // Schedule the scrapePrice function to run daily
-cron.schedule(DAILY_CRON_SCHEDULE, async () => {
+cron.schedule(CRON_SCHEDULE, async () => {
 	console.error(`\n--- Running Daily Scrape Job at ${new Date().toLocaleTimeString()} ---`)
 
 	// The comma-separated list of URLs to scrape, loaded from environment variables
@@ -34,7 +40,7 @@ cron.schedule(DAILY_CRON_SCHEDULE, async () => {
 	console.error(`--- Job Finished ---`)
 })
 
-console.error(`Scraping task is configured to run daily at 1:00 AM (cron: ${DAILY_CRON_SCHEDULE}).`)
+console.error(`Scraping task is configured to run daily at 1:00 AM (cron: ${CRON_SCHEDULE}).`)
 
 // To prevent the Node.js process from exiting after the initial task completes, 
 // we must ensure the event loop stays active. A real node-cron instance handles this,
