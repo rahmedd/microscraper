@@ -1,10 +1,9 @@
 import { scrapePrice, type ScrapeResult } from './scraper'
 import * as cron from 'node-cron'
-import * as dotenv from 'dotenv'
+import 'dotenv/config'
 import { app } from './slack'
 import { checkEnvVars } from './utils'
 
-dotenv.config()
 checkEnvVars();
 
 (async () => {
@@ -25,9 +24,7 @@ cron.schedule(CRON_SCHEDULE, async () => {
 	// Split the string by commas, trim whitespace, and filter out any empty strings
 	const urlsToScrape: { url: string, threshold: number }[] = JSON.parse(process.env.CS_URL!)
 	const thresholdMap: { [key: string]: number } = {}
-	urlsToScrape.forEach(e => {
-		thresholdMap[e.url] = e.threshold
-	})
+	urlsToScrape.forEach(e => thresholdMap[e.url] = e.threshold)
 
 
 	const allResults: ScrapeResult[] = []

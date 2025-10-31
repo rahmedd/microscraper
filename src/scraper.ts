@@ -1,7 +1,5 @@
 // Import the necessary modules from Playwright
 import { chromium, type Browser, type Page } from 'playwright'
-import * as dotenv from 'dotenv'
-dotenv.config()
 
 // The specific selector requested by the user
 const PRICE_SELECTOR = '#pricing'

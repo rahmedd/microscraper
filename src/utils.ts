@@ -5,6 +5,7 @@ export function checkEnvVars() {
 		'SLACK_BOT_TOKEN',
 		'SLACK_APP_TOKEN',
 		'SLACK_CHANNEL_ID',
+		'DB_URL',
 	]
 
 	for (const envVar of requiredEnvVars) {

@@ -6,7 +6,10 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc",
-    "start": "pnpm run build && node dist/scheduler.js"
+    "start": "pnpm run build && node dist/scheduler.js",
+    "generate": "pnpm exec drizzle-kit generate",
+    "migrate": "pnpm exec drizzle-kit migrate",
+    "push": "pnpm exec drizzle-kit push"
   },
   "keywords": [],
   "author": "",
@@ -14,8 +17,10 @@
   "packageManager": "pnpm@10.15.0",
   "dependencies": {
     "@hono/node-server": "^1.19.5",
+    "@libsql/client": "^0.15.15",
     "@slack/bolt": "^4.6.0",
     "dotenv": "^17.2.3",
+    "drizzle-orm": "^0.44.7",
     "eslint-plugin-jest": "^29.0.1",
     "hono": "^4.10.4",
     "node-cron": "^4.2.1",
@@ -25,6 +30,7 @@
     "@eslint/js": "^9.38.0",
     "@stylistic/eslint-plugin": "^5.5.0",
     "@types/node": "^20.19.24",
+    "drizzle-kit": "^0.31.6",
     "eslint": "^9.38.0",
     "ts-node": "^10.9.2",
     "tsx": "^4.20.6",
