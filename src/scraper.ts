@@ -1,17 +1,20 @@
-// Import the necessary modules from Playwright
 import { chromium, type Browser, type Page } from 'playwright'
+import { db } from './db'
+import { prices, products } from './schema'
+import { desc, eq } from 'drizzle-orm'
 
 // The specific selector requested by the user
 const PRICE_SELECTOR = '#pricing'
 
 // Define a type for the structured result
 export type ScrapeResult = {
-	productUrl: string;
-	priceSelector: string;
-	extractedPrice: number;
-	priceFormatted: string | null;
-	status: 'SUCCESS' | 'FAILURE_MISSING_CONTENT' | 'FAILURE_EXCEPTION';
-	errorMessage?: string;
+	product: typeof products.$inferSelect
+	productUrl: string
+	priceSelector: string
+	extractedPrice: number
+	priceFormatted: string | null
+	status: 'SUCCESS' | 'FAILURE_MISSING_CONTENT' | 'FAILURE_EXCEPTION'
+	errorMessage?: string
 }
 
 /**
@@ -20,7 +23,7 @@ export type ScrapeResult = {
  *
  * NOTE: This function is now exported for use by a separate scheduler file.
  */
-async function scrapePrice(productUrl: string): Promise<ScrapeResult[]> {
+async function scrapePrice(product: typeof products.$inferSelect): Promise<ScrapeResult[]> {
 	// Use console.error for all status/debugging messages to keep stdout clean for JSON.
 	console.error('Starting Playwright to scrape...')
 
@@ -29,13 +32,13 @@ async function scrapePrice(productUrl: string): Promise<ScrapeResult[]> {
 		headless: true, // Switched back to true, with anti-detection arguments below
 		args: [
 			// Adds common arguments to mimic a real browser and avoid detection
-			'--no-sandbox', 
+			'--no-sandbox',
 			'--disable-setuid-sandbox',
 			// Disables the most common Playwright detection (navigator.webdriver)
-			'--disable-blink-features=AutomationControlled', 
+			'--disable-blink-features=AutomationControlled',
 		],
 	})
-    
+
 	const context = await browser.newContext({
 		viewport: { width: 1280, height: 720 },
 		userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
@@ -48,8 +51,8 @@ async function scrapePrice(productUrl: string): Promise<ScrapeResult[]> {
 
 	try {
 		// 1. Navigate to the target URL
-		console.error(`Navigating to ${productUrl}`)
-		await page.goto(productUrl, { timeout: 60000 })
+		console.error(`Navigating to ${product.url}`)
+		await page.goto(product.url, { timeout: 10000 })
 
 		// 2. Wait for the specific element to be present in the DOM.
 		console.error(`Waiting for element: ${PRICE_SELECTOR}`)
@@ -61,22 +64,44 @@ async function scrapePrice(productUrl: string): Promise<ScrapeResult[]> {
 
 		// 4. Structure the output as an array of objects for n8n compatibility
 		if (priceContent) {
+			const latestPriceResult = await db.select()
+				.from(prices)
+				.where(
+					eq(prices.productId, product.id)
+				)
+				.orderBy(
+					desc(prices.createdAt)
+				)
+				.limit(1)
+
+			const latestPrice = latestPriceResult[0]
+
+			if (latestPrice?.newPrice !== Number(priceContent)) {
+				await db.insert(prices).values({
+					productId: product.id,
+					oldPrice: latestPrice?.newPrice ?? 0,
+					newPrice: Number(priceContent),
+				})
+			}
+
 			finalResult.push({
-				productUrl: productUrl,
+				product,
+				productUrl: product.url,
 				priceSelector: PRICE_SELECTOR,
 				extractedPrice: Number(priceContent),
 				priceFormatted: `$${priceContent}`,
-				status: 'SUCCESS'
+				status: 'SUCCESS',
 			})
 			console.error('\nExtraction successful. JSON output prepared.')
 		}
 		else {
 			finalResult.push({
-				productUrl: productUrl,
+				product,
+				productUrl: product.url,
 				priceSelector: PRICE_SELECTOR,
 				extractedPrice: -1,
 				priceFormatted: null,
-				status: 'FAILURE_MISSING_CONTENT'
+				status: 'FAILURE_MISSING_CONTENT',
 			})
 			console.error(`Element ${PRICE_SELECTOR} found, but 'content' attribute was empty or null.`)
 		}
@@ -87,15 +112,16 @@ async function scrapePrice(productUrl: string): Promise<ScrapeResult[]> {
 		const error = e as Error
 		console.error('\nAn error occurred during scraping:', error.message)
 		console.error('The selector might not exist or the page structure may have changed.')
-        
+
 		// Log a failure result even on exception
 		finalResult.push({
-			productUrl: productUrl,
+			product,
+			productUrl: product.url,
 			priceSelector: PRICE_SELECTOR,
 			extractedPrice: -1,
 			priceFormatted: null,
 			status: 'FAILURE_EXCEPTION',
-			errorMessage: error.message
+			errorMessage: error.message,
 		})
 
 	}

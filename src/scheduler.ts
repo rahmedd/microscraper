@@ -1,7 +1,9 @@
 import { scrapePrice, type ScrapeResult } from './scraper'
 import * as cron from 'node-cron'
 import 'dotenv/config'
-import { app } from './slack'
+import { slackApp } from './slack'
+import { db } from './db'
+import { products } from './schema'
 
 export const startScheduler = () => {
 	const isDevMode = process.env.NODE_ENV === 'dev'
@@ -13,14 +15,11 @@ export const startScheduler = () => {
 	cron.schedule(CRON_SCHEDULE, async () => {
 		console.error(`\n--- Running Daily Scrape Job at ${new Date().toLocaleTimeString()} ---`)
 
-		// Split the string by commas, trim whitespace, and filter out any empty strings
-		const urlsToScrape: { url: string, threshold: number }[] = JSON.parse(process.env.CS_URL!)
-		const thresholdMap: { [key: string]: number } = {}
-		urlsToScrape.forEach(e => thresholdMap[e.url] = e.threshold)
+		const urlsToScrape = await db.select().from(products)
 
 		const allResults: ScrapeResult[] = []
 		for (const url of urlsToScrape) {
-			const result: ScrapeResult[] = await scrapePrice(url.url)
+			const result: ScrapeResult[] = await scrapePrice(url)
 			allResults.push(...result) // Add the result from this scrape to our collection
 		}
 
@@ -28,11 +27,11 @@ export const startScheduler = () => {
 			if (
 				result.status === 'SUCCESS' &&
 				result.extractedPrice >= 0 &&
-				result.extractedPrice < thresholdMap[result.productUrl]
+				result.extractedPrice < result.product.threshold
 			) {
-				await app.client.chat.postMessage({
+				await slackApp.client.chat.postMessage({
 					channel: process.env.SLACK_CHANNEL_ID!,
-					text: `Price drop alert! is now $${result.extractedPrice}, which is below your threshold of $${thresholdMap[result.productUrl]}. \n\n ${result.productUrl}`,
+					text: `Price drop alert! is now $${result.extractedPrice}, which is below your threshold of $${result.product.threshold}. \n\n ${result.productUrl}`,
 				})
 			}
 		}
