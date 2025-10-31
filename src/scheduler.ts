@@ -2,8 +2,10 @@ import { scrapePrice, type ScrapeResult } from './scraper'
 import * as cron from 'node-cron'
 import * as dotenv from 'dotenv'
 import { app } from './slack'
+import { checkEnvVars } from './utils'
 
-dotenv.config();
+dotenv.config()
+checkEnvVars();
 
 (async () => {
 	// Start your app
@@ -29,18 +31,37 @@ cron.schedule(CRON_SCHEDULE, async () => {
 	}
 
 	// Split the string by commas, trim whitespace, and filter out any empty strings
-	const urlsToScrape = productUrlsString.split(',').map(url => url.trim()).filter(url => url)
-	const allResults: ScrapeResult[] = []
+	const urlsToScrape: { url: string, threshold: number }[] = JSON.parse(productUrlsString)
+	const thresholdMap: { [key: string]: number } = {}
+	urlsToScrape.forEach(e => {
+		thresholdMap[e.url] = e.threshold
+	})
 
+
+	const allResults: ScrapeResult[] = []
 	for (const url of urlsToScrape) {
-		const result: ScrapeResult[] = await scrapePrice(url)
+		const result: ScrapeResult[] = await scrapePrice(url.url)
 		allResults.push(...result) // Add the result from this scrape to our collection
 	}
+
+	for (const result of allResults) {
+		if (
+			result.status === 'SUCCESS'
+			&& result.extractedPrice >= 0
+			&& result.extractedPrice < thresholdMap[result.productUrl]
+		) {
+			await app.client.chat.postMessage({
+				channel: process.env.SLACK_CHANNEL_ID!,
+				text: `Price drop alert! is now $${result.extractedPrice}, which is below your threshold of $${thresholdMap[result.productUrl]}. \n\n ${result.productUrl}`
+			})
+		}
+	}
+
 	console.log(JSON.stringify(allResults))
 	console.error(`--- Job Finished ---`)
 })
 
-console.error(`Scraping task is configured to run daily at 1:00 AM (cron: ${CRON_SCHEDULE}).`)
+console.error(`Scraping task is configured to run daily at (cron: ${CRON_SCHEDULE}).`)
 
 // To prevent the Node.js process from exiting after the initial task completes, 
 // we must ensure the event loop stays active. A real node-cron instance handles this,

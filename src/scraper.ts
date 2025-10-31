@@ -10,7 +10,7 @@ const PRICE_SELECTOR = '#pricing'
 export type ScrapeResult = {
 	productUrl: string;
 	priceSelector: string;
-	extractedPrice: string | null;
+	extractedPrice: number;
 	priceFormatted: string | null;
 	status: 'SUCCESS' | 'FAILURE_MISSING_CONTENT' | 'FAILURE_EXCEPTION';
 	errorMessage?: string;
@@ -66,7 +66,7 @@ async function scrapePrice(productUrl: string): Promise<ScrapeResult[]> {
 			finalResult.push({
 				productUrl: productUrl,
 				priceSelector: PRICE_SELECTOR,
-				extractedPrice: priceContent,
+				extractedPrice: Number(priceContent),
 				priceFormatted: `$${priceContent}`,
 				status: 'SUCCESS'
 			})
@@ -76,7 +76,7 @@ async function scrapePrice(productUrl: string): Promise<ScrapeResult[]> {
 			finalResult.push({
 				productUrl: productUrl,
 				priceSelector: PRICE_SELECTOR,
-				extractedPrice: null,
+				extractedPrice: -1,
 				priceFormatted: null,
 				status: 'FAILURE_MISSING_CONTENT'
 			})
@@ -94,7 +94,7 @@ async function scrapePrice(productUrl: string): Promise<ScrapeResult[]> {
 		finalResult.push({
 			productUrl: productUrl,
 			priceSelector: PRICE_SELECTOR,
-			extractedPrice: null,
+			extractedPrice: -1,
 			priceFormatted: null,
 			status: 'FAILURE_EXCEPTION',
 			errorMessage: error.message
