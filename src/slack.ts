@@ -6,7 +6,6 @@ export const app = new App({
 	appToken: process.env.SLACK_APP_TOKEN
 })
 
-
 const sampleMessageCallback = async ({
 	context,
 	logger,
@@ -26,8 +25,6 @@ const register = (app: App) => {
 	app.message(/^(hi|hello|hey).*/, sampleMessageCallback)
 }
 
-const registerListeners = (app: App) => {
+export const registerListeners = (app: App) => {
 	register(app)
 }
-
-registerListeners(app)

@@ -5,11 +5,14 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsc",
-    "start": "pnpm run build && node dist/scheduler.js",
-    "generate": "pnpm exec drizzle-kit generate",
-    "migrate": "pnpm exec drizzle-kit migrate",
-    "push": "pnpm exec drizzle-kit push"
+    "build": "tsc --project tsconfig.json",
+    "start": "pnpm run build && node dist/index.js",
+    "generate": "drizzle-kit generate",
+    "migrate": "drizzle-kit migrate",
+    "push": "drizzle-kit push",
+    "lint": "eslint .",
+    "lint:fix": "eslint --fix .",
+    "clean": "rimraf dist"
   },
   "keywords": [],
   "author": "",
@@ -32,6 +35,7 @@
     "@types/node": "^20.19.24",
     "drizzle-kit": "^0.31.6",
     "eslint": "^9.38.0",
+    "rimraf": "^6.1.0",
     "ts-node": "^10.9.2",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3",
