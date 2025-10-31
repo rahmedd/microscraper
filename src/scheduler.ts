@@ -22,16 +22,8 @@ console.error('Starting Daily Playwright Scheduler using node-cron pattern...')
 cron.schedule(CRON_SCHEDULE, async () => {
 	console.error(`\n--- Running Daily Scrape Job at ${new Date().toLocaleTimeString()} ---`)
 
-	// The comma-separated list of URLs to scrape, loaded from environment variables
-	const productUrlsString = process.env.CS_URL
-
-	if (!productUrlsString) {
-		console.error('Error: CS_URL environment variable is not set or is empty.')
-		return // Exit the job if no URLs are provided
-	}
-
 	// Split the string by commas, trim whitespace, and filter out any empty strings
-	const urlsToScrape: { url: string, threshold: number }[] = JSON.parse(productUrlsString)
+	const urlsToScrape: { url: string, threshold: number }[] = JSON.parse(process.env.CS_URL!)
 	const thresholdMap: { [key: string]: number } = {}
 	urlsToScrape.forEach(e => {
 		thresholdMap[e.url] = e.threshold
