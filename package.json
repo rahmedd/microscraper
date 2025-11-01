@@ -10,6 +10,7 @@
     "generate": "drizzle-kit generate",
     "migrate": "drizzle-kit migrate",
     "push": "drizzle-kit push",
+    "initial": "tsx ./src/init",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
     "clean": "rimraf dist"

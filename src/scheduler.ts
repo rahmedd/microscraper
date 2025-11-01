@@ -3,7 +3,8 @@ import * as cron from 'node-cron'
 import 'dotenv/config'
 import { slackApp } from './slack'
 import { db } from './db'
-import { products } from './schema'
+import { flags, products } from './schema'
+import { eq } from 'drizzle-orm'
 
 export const startScheduler = () => {
 	const isDevMode = process.env.NODE_ENV === 'dev'
@@ -14,6 +15,12 @@ export const startScheduler = () => {
 	// Schedule the scrapePrice function to run daily
 	cron.schedule(CRON_SCHEDULE, async () => {
 		console.error(`\n--- Running Daily Scrape Job at ${new Date().toLocaleTimeString()} ---`)
+
+		const schedulerEnabled = await db.select().from(flags).where(eq(flags.name, 'SCHEDULER'))
+		if (!schedulerEnabled[0].enabled) {
+			console.log('scheduler disabled, skipping scraper')
+			return
+		}
 
 		const urlsToScrape = await db.select().from(products)
 

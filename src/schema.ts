@@ -13,6 +13,12 @@ import { int, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 // 		.default(sql`(strftime('%s', 'now'))`),
 // })
 
+export const flags = sqliteTable('flags', {
+	id: int().primaryKey({ autoIncrement: true }),
+	name: text().notNull().unique(),
+	enabled: int({ mode: 'boolean' }).notNull().default(false),
+})
+
 export const products = sqliteTable('products', {
 	id: int().primaryKey({ autoIncrement: true }),
 	url: text().notNull(),
