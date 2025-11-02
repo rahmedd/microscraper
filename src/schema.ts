@@ -34,9 +34,11 @@ export const products = sqliteTable('products', {
 export const prices = sqliteTable('prices', {
 	id: int().primaryKey({ autoIncrement: true }),
 	productId: int().references(() => products.id),
-	oldPrice: int().notNull(),
-	newPrice: int().notNull(),
+	price: int().notNull(),
+	condition: text({ enum: ['NEW', 'OPENBOX', 'REFURB', 'USED'] }).notNull(),
 	createdAt: int({ mode: 'timestamp' })
 		.notNull()
 		.default(sql`(strftime('%s', 'now'))`),
 })
+
+export type CONDITIONS = typeof prices.condition.enumValues

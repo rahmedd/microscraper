@@ -64,7 +64,7 @@ async function scrapePrice(product: typeof products.$inferSelect): Promise<Scrap
 
 		// 4. Structure the output as an array of objects for n8n compatibility
 		if (priceContent) {
-			const latestPriceResult = await db.select()
+			const lastPriceResult = await db.select()
 				.from(prices)
 				.where(
 					eq(prices.productId, product.id)
@@ -74,13 +74,14 @@ async function scrapePrice(product: typeof products.$inferSelect): Promise<Scrap
 				)
 				.limit(1)
 
-			const latestPrice = latestPriceResult[0]
+			const lastPrice = lastPriceResult[0].price
+			const latestPrice = Number(priceContent)
 
-			if (latestPrice?.newPrice !== Number(priceContent)) {
+			if (lastPrice !== Number(priceContent)) {
 				await db.insert(prices).values({
 					productId: product.id,
-					oldPrice: latestPrice?.newPrice ?? 0,
-					newPrice: Number(priceContent),
+					price: latestPrice,
+					condition: 'NEW',
 				})
 			}
 
