@@ -1,7 +1,11 @@
+import 'dotenv/config'
 import { App, type AllMiddlewareArgs, type SlackEventMiddlewareArgs } from '@slack/bolt'
-import { db } from './db/db'
-import { flags } from './db/schema'
+import { db } from './db'
+import { flags } from './schema'
 import { eq } from 'drizzle-orm'
+import { checkEnvVars } from './utils'
+
+checkEnvVars()
 
 export const slackApp = new App({
 	token: process.env.SLACK_BOT_TOKEN,
@@ -25,7 +29,6 @@ const sampleMessageCallback = async ({
 }
 
 const pauseMessageCallback = async ({
-	context,
 	logger,
 	say,
 }: AllMiddlewareArgs & SlackEventMiddlewareArgs<'message'>) => {
@@ -47,4 +50,18 @@ const register = (app: App) => {
 
 export const registerListeners = (app: App) => {
 	register(app)
+}
+
+export const start = async () => {
+	// Register listeners
+	registerListeners(slackApp)
+
+	// Start your slack app
+	await slackApp.start()
+	slackApp.logger.info('⚡️ Bolt app is running!')
+}
+
+// Start the app only if this file is run directly
+if (require.main === module) {
+	start()
 }

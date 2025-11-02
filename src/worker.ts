@@ -1,7 +1,7 @@
 
 import { parentPort, workerData } from 'worker_threads'
 import { scrapePrice } from './scraper'
-import { products } from './db/schema'
+import { products } from './schema'
 
 (async () => {
 	const { product } = workerData as { product: typeof products.$inferSelect }

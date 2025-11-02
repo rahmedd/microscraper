@@ -1,6 +1,6 @@
 import { chromium, type Browser, type Page } from 'playwright'
-import { db } from './db/db'
-import { prices, products } from './db/schema'
+import { db } from './db'
+import { prices, products } from './schema'
 import { desc, eq } from 'drizzle-orm'
 
 // The specific selector requested by the user

@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc --project tsconfig.json",
-    "start": "pnpm run build && node dist/index.js",
+    "start": "pnpm run build && concurrently --names \"api,scheduler,slack\" \"node dist/api.js\" \"node dist/scheduler.js\" \"node dist/slack.js\" --kill-others",
     "generate": "drizzle-kit generate",
     "migrate": "drizzle-kit migrate",
     "push": "drizzle-kit push",
@@ -34,6 +34,7 @@
     "@eslint/js": "^9.38.0",
     "@stylistic/eslint-plugin": "^5.5.0",
     "@types/node": "^20.19.24",
+    "concurrently": "^9.2.1",
     "drizzle-kit": "^0.31.6",
     "eslint": "^9.38.0",
     "rimraf": "^6.1.0",

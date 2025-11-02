@@ -1,8 +1,8 @@
 // Initalize database
 
 import 'dotenv/config'
-import { flags } from './db/schema'
-import { db } from './db/db'
+import { flags } from './schema'
+import { db } from './db'
 
 async function main() {
 	const user: typeof flags.$inferInsert = {

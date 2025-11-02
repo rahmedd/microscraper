@@ -13,7 +13,17 @@
 ❌ Alert products of interest
 
 ## Setup
-Modify .env with product URL
+1. Copy and modify .env
+2. Modify the products table and add your URLs and threshold
 
 ## To run
-node .\scheduler.js
+`pnpm run start`
+
+## Architecture
+- Hono REST API
+- Scheduler
+	- Scraper worker
+- Slack (Notifications)
+
+## Why SQlite/LibSQL?
+- Artificial limitation
