@@ -5,8 +5,6 @@ import { flags } from './schema'
 import { eq } from 'drizzle-orm'
 import { checkEnvVars } from './utils'
 
-checkEnvVars()
-
 export const slackApp = new App({
 	token: process.env.SLACK_BOT_TOKEN,
 	socketMode: true,
@@ -53,6 +51,8 @@ export const registerListeners = (app: App) => {
 }
 
 export const start = async () => {
+	checkEnvVars()
+
 	// Register listeners
 	registerListeners(slackApp)
 

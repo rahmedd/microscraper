@@ -5,13 +5,17 @@ import { db } from './db'
 import { flags, products } from './schema'
 import { eq } from 'drizzle-orm'
 import { ScrapeResult } from './scraper'
-import App from '@slack/bolt'
+import { slackApp } from './slack'
+import { checkEnvVars } from './utils'
+// import App from '@slack/bolt'
 
-const slackApp = new App({
-	token: process.env.SLACK_BOT_TOKEN,
-	socketMode: true,
-	appToken: process.env.SLACK_APP_TOKEN
-})
+checkEnvVars()
+
+// const slackApp = new App({
+// 	token: process.env.SLACK_BOT_TOKEN,
+// 	socketMode: true,
+// 	appToken: process.env.SLACK_APP_TOKEN
+// })
 
 const isDevMode = process.env.NODE_ENV === 'dev'
 const CRON_SCHEDULE = isDevMode ? '* * * * *' : '0 12 * * *' // Every minute in dev, daily at 12 PM in production
