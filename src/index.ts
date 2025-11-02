@@ -1,10 +1,10 @@
 import 'dotenv/config'
 
-import { slackApp, registerListeners } from './slack'
+import { honoApp } from './api'
 import { startScheduler } from './scheduler'
+import { registerListeners, slackApp } from './slack'
 import { checkEnvVars } from './utils'
 import { serve } from '@hono/node-server'
-import { honoApp } from './api'
 
 checkEnvVars();
 

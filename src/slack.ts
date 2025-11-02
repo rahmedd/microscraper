@@ -1,6 +1,6 @@
 import { App, type AllMiddlewareArgs, type SlackEventMiddlewareArgs } from '@slack/bolt'
-import { db } from './db'
-import { flags } from './schema'
+import { db } from './db/db'
+import { flags } from './db/schema'
 import { eq } from 'drizzle-orm'
 
 export const slackApp = new App({
