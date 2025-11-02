@@ -1,10 +1,11 @@
-import { scrapePrice, type ScrapeResult } from './scraper'
+import { Worker } from 'worker_threads'
 import * as cron from 'node-cron'
 import 'dotenv/config'
 import { slackApp } from './slack'
 import { db } from './db'
 import { flags, products } from './schema'
 import { eq } from 'drizzle-orm'
+import { ScrapeResult } from './scraper'
 
 export const startScheduler = () => {
 	const isDevMode = process.env.NODE_ENV === 'dev'
@@ -23,19 +24,26 @@ export const startScheduler = () => {
 		}
 
 		const urlsToScrape = await db.select().from(products)
+		const scrapingJobs = urlsToScrape.map(product => 
+			new Promise<ScrapeResult[]>((resolve, reject) => {
+				const worker = new Worker('./src/worker.ts', {
+					workerData: { product },
+					execArgv: [...process.execArgv, '--require', 'ts-node/register']
+				})
+				worker.on('message', resolve)
+				worker.on('error', reject)
+				worker.on('exit', (code) => {
+					if (code !== 0)
+						reject(new Error(`Worker stopped with exit code ${code}`))
+				})
+			})
+		)
 
-		const allResults: ScrapeResult[] = []
-		for (const url of urlsToScrape) {
-			const result: ScrapeResult[] = await scrapePrice(url)
-			allResults.push(...result) // Add the result from this scrape to our collection
-		}
+		const results = await Promise.all(scrapingJobs)
+		const allResults = results.flat()
 
 		for (const result of allResults) {
-			if (
-				result.status === 'SUCCESS' &&
-				result.extractedPrice >= 0 &&
-				result.extractedPrice < result.product.threshold
-			) {
+			if (result.status === 'SUCCESS' && result.extractedPrice < result.product.threshold) {
 				await slackApp.client.chat.postMessage({
 					channel: process.env.SLACK_CHANNEL_ID!,
 					text: `Price drop alert! is now $${result.extractedPrice}, which is below your threshold of $${result.product.threshold}. \n\n ${result.productUrl}`,
@@ -43,7 +51,7 @@ export const startScheduler = () => {
 			}
 		}
 
-		console.log(JSON.stringify(allResults))
+		console.log(JSON.stringify(allResults, null, 2))
 		console.error(`--- Job Finished ---`)
 	})
 
