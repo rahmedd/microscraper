@@ -1,21 +1,10 @@
 import { chromium, type Browser, type Page } from 'playwright'
+import { ScrapeResult } from './types/scrape-result'
 
 // The specific selector requested by the user
 const NEW_PRICE_SELECTOR = '#pricing'
 // const OPENBOX_PRICE_SELECTOR = '#opCostNew'
 // const SALE_SELECTOR = '.standardDiscount'
-
-// Define a type for the structured result
-export type ScrapeResult = {
-	productUrl: string
-	priceSelector: string
-	extractedPrice: number
-	openboxPrice: number
-	sale: boolean
-	priceFormatted: string | null
-	status: 'SUCCESS' | 'FAILURE_MISSING_CONTENT' | 'FAILURE_EXCEPTION'
-	errorMessage?: string
-}
 
 /**
  * Launches a Playwright browser, navigates to the product page,
@@ -71,7 +60,6 @@ async function scrapePrice(url: string): Promise<ScrapeResult[]> {
 		if (priceContent) {
 			finalResult.push({
 				productUrl: url,
-				priceSelector: NEW_PRICE_SELECTOR,
 				extractedPrice: Number(priceContent),
 				priceFormatted: `$${priceContent}`,
 				status: 'SUCCESS',
@@ -83,7 +71,6 @@ async function scrapePrice(url: string): Promise<ScrapeResult[]> {
 		else {
 			finalResult.push({
 				productUrl: url,
-				priceSelector: NEW_PRICE_SELECTOR,
 				extractedPrice: -1,
 				priceFormatted: null,
 				status: 'FAILURE_MISSING_CONTENT',
@@ -103,7 +90,6 @@ async function scrapePrice(url: string): Promise<ScrapeResult[]> {
 		// Log a failure result even on exception
 		finalResult.push({
 			productUrl: url,
-			priceSelector: NEW_PRICE_SELECTOR,
 			extractedPrice: -1,
 			priceFormatted: null,
 			status: 'FAILURE_EXCEPTION',

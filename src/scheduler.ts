@@ -4,9 +4,9 @@ import * as cron from 'node-cron'
 import { db } from './db'
 import { flags, prices, products } from './schema'
 import { desc, eq } from 'drizzle-orm'
-import { ScrapeResult } from './scraper'
 import { slackApp } from './slack'
 import { checkEnvVars } from './utils'
+import { ScrapeResult } from './types/scrape-result'
 // import App from '@slack/bolt'
 
 checkEnvVars()
