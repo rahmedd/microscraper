@@ -36,7 +36,7 @@ cron.schedule(CRON_SCHEDULE, async () => {
 	const scrapingJobs = urlsToScrape.map(product => 
 		new Promise<ScrapeResult[]>((resolve, reject) => {
 			const worker = new Worker('./src/worker.ts', {
-				workerData: { url:product.url },
+				workerData: { url: product.url },
 				execArgv: [...process.execArgv, '--require', 'ts-node/register']
 			})
 			worker.on('message', resolve)
