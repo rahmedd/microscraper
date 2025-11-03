@@ -1,17 +1,17 @@
 import { chromium, type Browser, type Page } from 'playwright'
-import { db } from './db'
-import { prices, products } from './schema'
-import { desc, eq } from 'drizzle-orm'
 
 // The specific selector requested by the user
-const PRICE_SELECTOR = '#pricing'
+const NEW_PRICE_SELECTOR = '#pricing'
+// const OPENBOX_PRICE_SELECTOR = '#opCostNew'
+// const SALE_SELECTOR = '.standardDiscount'
 
 // Define a type for the structured result
 export type ScrapeResult = {
-	product: typeof products.$inferSelect
 	productUrl: string
 	priceSelector: string
 	extractedPrice: number
+	openboxPrice: number
+	sale: boolean
 	priceFormatted: string | null
 	status: 'SUCCESS' | 'FAILURE_MISSING_CONTENT' | 'FAILURE_EXCEPTION'
 	errorMessage?: string
@@ -23,7 +23,7 @@ export type ScrapeResult = {
  *
  * NOTE: This function is now exported for use by a separate scheduler file.
  */
-async function scrapePrice(product: typeof products.$inferSelect): Promise<ScrapeResult[]> {
+async function scrapePrice(url: string): Promise<ScrapeResult[]> {
 	// Use console.error for all status/debugging messages to keep stdout clean for JSON.
 	console.error('Starting Playwright to scrape...')
 
@@ -51,60 +51,46 @@ async function scrapePrice(product: typeof products.$inferSelect): Promise<Scrap
 
 	try {
 		// 1. Navigate to the target URL
-		console.error(`Navigating to ${product.url}`)
-		await page.goto(product.url, { timeout: 10000 })
+		console.error(`Navigating to ${url}`)
+		await page.goto(url, { timeout: 10000 })
 
 		// 2. Wait for the specific element to be present in the DOM.
-		console.error(`Waiting for element: ${PRICE_SELECTOR}`)
-		await page.waitForSelector(PRICE_SELECTOR, { state: 'attached', timeout: 10000 })
+		console.error(`Waiting for element: ${NEW_PRICE_SELECTOR}`)
+		await page.waitForSelector(NEW_PRICE_SELECTOR, { state: 'attached', timeout: 10000 })
 
 		// 3. Use page.locator() and getAttribute() to replicate the desired operation.
-		const priceLocator = page.locator(PRICE_SELECTOR)
+		const priceLocator = page.locator(NEW_PRICE_SELECTOR)
 		const priceContent = await priceLocator.getAttribute('content')
 
-		// 4. Structure the output as an array of objects for n8n compatibility
+		// const openboxPriceLocator = page.locator(OPENBOX_PRICE_SELECTOR)
+		// const openboxPriceContent = await openboxPriceLocator.getAttribute('content')
+
+		// const saleLocator = page.locator(SALE_SELECTOR)
+		// const isSale = !!await saleLocator.getAttribute('content')
+
 		if (priceContent) {
-			const lastPriceResult = await db.select()
-				.from(prices)
-				.where(
-					eq(prices.productId, product.id)
-				)
-				.orderBy(
-					desc(prices.createdAt)
-				)
-				.limit(1)
-
-			const lastPrice = lastPriceResult[0].price
-			const latestPrice = Number(priceContent)
-
-			if (lastPrice !== Number(priceContent)) {
-				await db.insert(prices).values({
-					productId: product.id,
-					price: latestPrice,
-					condition: 'NEW',
-				})
-			}
-
 			finalResult.push({
-				product,
-				productUrl: product.url,
-				priceSelector: PRICE_SELECTOR,
+				productUrl: url,
+				priceSelector: NEW_PRICE_SELECTOR,
 				extractedPrice: Number(priceContent),
 				priceFormatted: `$${priceContent}`,
 				status: 'SUCCESS',
+				sale: false,
+				openboxPrice: -1,
 			})
 			console.error('\nExtraction successful. JSON output prepared.')
 		}
 		else {
 			finalResult.push({
-				product,
-				productUrl: product.url,
-				priceSelector: PRICE_SELECTOR,
+				productUrl: url,
+				priceSelector: NEW_PRICE_SELECTOR,
 				extractedPrice: -1,
 				priceFormatted: null,
 				status: 'FAILURE_MISSING_CONTENT',
+				sale: false,
+				openboxPrice: -1,
 			})
-			console.error(`Element ${PRICE_SELECTOR} found, but 'content' attribute was empty or null.`)
+			console.error(`Element ${NEW_PRICE_SELECTOR} found, but 'content' attribute was empty or null.`)
 		}
 
 	}
@@ -116,13 +102,14 @@ async function scrapePrice(product: typeof products.$inferSelect): Promise<Scrap
 
 		// Log a failure result even on exception
 		finalResult.push({
-			product,
-			productUrl: product.url,
-			priceSelector: PRICE_SELECTOR,
+			productUrl: url,
+			priceSelector: NEW_PRICE_SELECTOR,
 			extractedPrice: -1,
 			priceFormatted: null,
 			status: 'FAILURE_EXCEPTION',
 			errorMessage: error.message,
+			sale: false,
+			openboxPrice: -1,
 		})
 
 	}
