@@ -60,39 +60,30 @@ cron.schedule(CRON_SCHEDULE, async () => {
 		}
 
 		if (result.status === 'SUCCESS' && result.extractedPrice < p.threshold) {
+			const extractedPrice = Number(result.extractedPrice)
+
 			const lastPriceRows = await db
-				.select({
-					// Select all columns from the 'prices' table
-					id: prices.id,
-					productId: prices.productId,
-					price: prices.price,
-					sale: prices.sale,
-					condition: prices.condition,
-					createdAt: prices.createdAt,
-				})
+				.select()
 				.from(prices)
 				.innerJoin(products, eq(prices.productId, products.id))
 				.where(eq(products.url, p.url))
-				.orderBy(desc(prices.createdAt)) // Order by creation time, newest first
-				.limit(1) // Get only the top one
+				.orderBy(desc(prices.createdAt))
+				.limit(1)
 
-			const lastPriceRecord = lastPriceRows[0] || -1
-			const extractedPrice = Number(result.extractedPrice)
+			const lastPriceRecord = lastPriceRows[0]
 
-			// new items
-			// if (
-			// 	(lastPriceRecord.price !== Number(priceContent)) || (isSale && !lastPriceRecord.sale)
-			// ) {
-			// 	await db.insert(prices).values({
-			// 		productId: product.id,
-			// 		price: latestPrice,
-			// 		condition: 'NEW',
-			// 	})
-			// }
-
-			if (lastPriceRecord.price !== extractedPrice) {
+			// If there's no last price record, or if the price has changed, insert a new record
+			if (
+				extractedPrice > 0
+				&& (
+					!lastPriceRecord
+					|| lastPriceRecord.prices.price !== extractedPrice
+					|| lastPriceRecord.prices.sale !== result.sale
+				)
+			) {
 				await db.insert(prices).values({
-					productId: lastPriceRecord.productId,
+					productId: p.id,
+					sale: result.sale,
 					price: extractedPrice,
 					condition: 'NEW',
 				})

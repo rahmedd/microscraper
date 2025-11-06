@@ -42,4 +42,4 @@ export const prices = sqliteTable('prices', {
 		.default(sql`(strftime('%s', 'now'))`),
 })
 
-export type CONDITIONS = typeof prices.condition.enumValues
+export type PRICE_COND = typeof prices.condition.enumValues[number]
