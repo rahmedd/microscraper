@@ -7,7 +7,6 @@ export function checkEnvVars() {
 		'SLACK_CHANNEL_ID',
 		'DB_URL',
 		'API_PORT',
-		'SLACK_PORT',
 	]
 
 	for (const envVar of requiredEnvVars) {

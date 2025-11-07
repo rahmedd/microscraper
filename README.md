@@ -4,9 +4,9 @@
 
 ✅ Scrape specific store pages on a schedule
 
-❌ Store the price
+✅ Store the price
 
-❌ Alert based on threshold
+✅ Alert based on threshold
 
 ❌ Alert price change
 
