@@ -23,6 +23,7 @@ export const products = sqliteTable('products', {
 	id: int().primaryKey({ autoIncrement: true }),
 	url: text().notNull(),
 	threshold: int().notNull(),
+	enabled: int({ mode: 'boolean' }).notNull().default(true),
 	createdAt: int({ mode: 'timestamp' })
 		.notNull()
 		.default(sql`(strftime('%s', 'now'))`),

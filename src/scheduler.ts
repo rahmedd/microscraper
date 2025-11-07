@@ -32,7 +32,7 @@ cron.schedule(CRON_SCHEDULE, async () => {
 		return
 	}
 
-	const urlsToScrape = await db.select().from(products)
+	const urlsToScrape = await db.select().from(products).where(eq(products.enabled, true))
 	const scrapingJobs = urlsToScrape.map(product => 
 		new Promise<ScrapeResult[]>((resolve, reject) => {
 			const worker = new Worker('./src/worker.ts', {

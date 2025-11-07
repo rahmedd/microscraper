@@ -3,8 +3,8 @@ import { ScrapeResult } from './types/scrape-result'
 
 // The specific selector requested by the user
 const NEW_PRICE_SELECTOR = '#pricing'
-// const OPENBOX_PRICE_SELECTOR = '#opCostNew'
-// const SALE_SELECTOR = '.standardDiscount'
+const OPENBOX_PRICE_SELECTOR = '#opCostNew'
+const SALE_SELECTOR = '.standardDiscount'
 
 /**
  * Launches a Playwright browser, navigates to the product page,
@@ -43,28 +43,57 @@ async function scrapePrice(url: string): Promise<ScrapeResult[]> {
 		console.error(`Navigating to ${url}`)
 		await page.goto(url, { timeout: 10000 })
 
-		// 2. Wait for the specific element to be present in the DOM.
-		console.error(`Waiting for element: ${NEW_PRICE_SELECTOR}`)
-		await page.waitForSelector(NEW_PRICE_SELECTOR, { state: 'attached', timeout: 10000 })
+		try {
+			// Wait for the button to be visible before clicking
+			const closeButton = page.locator('.close-button')
+			await closeButton.waitFor({ state: 'visible', timeout: 5000 })
+			await closeButton.click()
+			console.error('Clicked the close button.')
+		}
+		catch {
+			console.error('Close button not found or not clickable, proceeding without clicking.')
+		}
 
-		// 3. Use page.locator() and getAttribute() to replicate the desired operation.
+		// --- Define all your locators first ---
 		const priceLocator = page.locator(NEW_PRICE_SELECTOR)
+		const openboxPriceLocator = page.locator(OPENBOX_PRICE_SELECTOR) // Using the correct ID
+		const saleLocator = page.locator(SALE_SELECTOR)
+
+		// 2. Wait for the *mandatory* element to exist
+		console.error(`Waiting for element: ${NEW_PRICE_SELECTOR}`)
+		await priceLocator.waitFor({ state: 'attached', timeout: 10000 })
 		const priceContent = await priceLocator.getAttribute('content')
 
-		// const openboxPriceLocator = page.locator(OPENBOX_PRICE_SELECTOR)
-		// const openboxPriceContent = await openboxPriceLocator.getAttribute('content')
+		// 3. Safely get the *optional* open-box price
+		let openboxPriceContent = null
+		try {
+			// Give it 1 second to appear. If it doesn't, we'll just move on.
+			await openboxPriceLocator.waitFor({ state: 'attached', timeout: 5000 })
+            
+			// Now that we know it exists, get the attribute
+			openboxPriceContent = await openboxPriceLocator.textContent()
+		}
+		catch {
+			// TimeoutError: Element not found, which is fine for an optional element.
+			console.error('Note: Openbox price not found (which is OK).')
+		}
 
-		// const saleLocator = page.locator(SALE_SELECTOR)
-		// const isSale = !!await saleLocator.getAttribute('content')
+		// 4. Safely check for the *optional* sale element
+		// .count() is a fast, non-waiting way to check for existence.
+		// It's safe to use here since the main element has already loaded.
+		const saleCount = await saleLocator.count()
+		const isSale = saleCount > 0
+		const openboxNum = openboxPriceContent ? parseFloat(openboxPriceContent.split('$')[1]) : -1
 
+		// 5. Push the full result
 		if (priceContent) {
 			finalResult.push({
 				productUrl: url,
 				extractedPrice: Number(priceContent),
 				priceFormatted: `$${priceContent}`,
 				status: 'SUCCESS',
-				sale: false,
-				openboxPrice: -1,
+				sale: isSale, // Add your new data
+				openboxPrice: openboxNum ? openboxNum : -1,
 			})
 			console.error('\nExtraction successful. JSON output prepared.')
 		}
@@ -81,6 +110,7 @@ async function scrapePrice(url: string): Promise<ScrapeResult[]> {
 		}
 
 	}
+	// ... rest of your code (catch, finally) ...
 	catch (e: unknown) {
 		// General error handling for navigation or selection failures
 		const error = e as Error
