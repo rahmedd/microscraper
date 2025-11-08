@@ -32,6 +32,8 @@ export const products = sqliteTable('products', {
 		.default(sql`(strftime('%s', 'now'))`),
 })
 
+// export const conditions = ['NEW', 'OPENBOX', 'REFURB', 'USED'] as const
+
 export const prices = sqliteTable('prices', {
 	id: int().primaryKey({ autoIncrement: true }),
 	productId: int().references(() => products.id),
@@ -44,3 +46,4 @@ export const prices = sqliteTable('prices', {
 })
 
 export type PRICE_COND = typeof prices.condition.enumValues[number]
+export const conditions = prices.condition.enumValues

@@ -1,0 +1,17 @@
+meta {
+  name: update flag
+  type: http
+  seq: 2
+}
+
+put {
+  url: {{API_URL}}/flags/1
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "enabled": true
+  }
+}

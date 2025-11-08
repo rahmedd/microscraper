@@ -24,14 +24,17 @@
   "packageManager": "pnpm@10.15.0",
   "dependencies": {
     "@hono/node-server": "^1.19.5",
+    "@hono/valibot-validator": "^0.5.3",
     "@libsql/client": "^0.15.15",
     "@slack/bolt": "^4.6.0",
     "dotenv": "^17.2.3",
     "drizzle-orm": "^0.44.7",
     "eslint-plugin-jest": "^29.0.1",
     "hono": "^4.10.4",
+    "hono-openapi": "^1.1.1",
     "node-cron": "^4.2.1",
-    "playwright": "^1.56.1"
+    "playwright": "^1.56.1",
+    "valibot": "^1.1.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.38.0",
