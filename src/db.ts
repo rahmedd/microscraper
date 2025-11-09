@@ -1,33 +1,50 @@
 import { and, desc, eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/libsql'
-import { PRICE_COND, prices, products } from './schema'
+import { PRICE_COND, prices, products, Price, flags, Product } from './schema'
 
 export const db = drizzle({
 	connection: {
 		url: process.env.DB_URL!,
-	}
+	},
+	schema: {
+		flags,
+		products,
+		prices,
+	},
 })
 
-export async function getProduct(url: string) {
-	const lastPriceRows = await db
-		.select()
+export async function getProduct(url: string): Promise<Product | null>{
+	const result: Product[] = await db
+		.select({
+			id: products.id,
+			url: products.url,
+			threshold: products.threshold,
+			enabled: products.enabled,
+			createdAt: products.createdAt,
+			updatedAt: products.updatedAt,
+		})
 		.from(products)
-		.where(
-			eq(products.url, url),
-		)
+		.innerJoin(prices, eq(products.id, prices.productId))
+		.where(eq(products.url, url))
 		.orderBy(desc(prices.createdAt))
 		.limit(1)
 
-	if (lastPriceRows.length > 0 && lastPriceRows[0]) {
-		return lastPriceRows[0]
+	if (result.length > 0 && result[0]) {
+		return result[0]
 	}
-
 	return null
 }
 
 export async function getLastPrice(url: string, condition: PRICE_COND, sale: boolean) {
-	const lastPriceRows = await db
-		.select()
+	const lastPriceRows: Price[] = await db
+		.select({
+			id: prices.id,
+			productId: prices.productId,
+			price: prices.price,
+			sale: prices.sale,
+			condition: prices.condition,
+			createdAt: prices.createdAt,
+		})
 		.from(prices)
 		.innerJoin(products, eq(prices.productId, products.id))
 		.where(
@@ -48,14 +65,6 @@ export async function getLastPrice(url: string, condition: PRICE_COND, sale: boo
 }
 
 export async function getProductAndLastPrice(url: string, condition: PRICE_COND, sale: boolean) {
-	// const lastPriceRows = await db
-	// 	.select()
-	// 	.from(prices)
-	// 	.innerJoin(products, eq(prices.productId, products.id))
-	// 	.where(eq(products.url, url))
-	// 	.orderBy(desc(prices.createdAt))
-	// 	.limit(1)
-
 	const lastPriceRows = await db
 		.select()
 		.from(products)

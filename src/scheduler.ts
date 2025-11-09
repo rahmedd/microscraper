@@ -70,8 +70,6 @@ cron.schedule(CRON_SCHEDULE, async () => {
 			}
 		}
 
-		await processPrice(result, p)
-
 		await slackApp.client.chat.postMessage({
 			channel: process.env.SLACK_CHANNEL_ID!,
 			text: `Price drop alert! ${p.url} is now $${result.extractedPrice}, which is below your threshold of $${p.threshold}. \n\n ${result.productUrl}`,
