@@ -47,3 +47,5 @@ export const prices = sqliteTable('prices', {
 
 export type PRICE_COND = typeof prices.condition.enumValues[number]
 export const conditions = prices.condition.enumValues
+export type Product = typeof products.$inferSelect
+export type Price = typeof prices.$inferSelect

@@ -1,12 +1,13 @@
 import 'dotenv/config'
 import { Worker } from 'worker_threads'
 import * as cron from 'node-cron'
-import { db } from './db'
-import { flags, prices, products } from './schema'
-import { desc, eq } from 'drizzle-orm'
+import { db, getLastPrice, getProduct, getProductAndLastPrice } from './db'
+import { flags, products } from './schema'
+import { eq } from 'drizzle-orm'
 import { slackApp } from './slack'
 import { checkEnvVars } from './utils'
 import { ScrapeResult } from './types/scrape-result'
+import { shouldUpdate } from './price-processor'
 // import App from '@slack/bolt'
 
 checkEnvVars()
@@ -33,7 +34,7 @@ cron.schedule(CRON_SCHEDULE, async () => {
 	}
 
 	const urlsToScrape = await db.select().from(products).where(eq(products.enabled, true))
-	const scrapingJobs = urlsToScrape.map(product => 
+	const scrapingJobs = urlsToScrape.map(product =>
 		new Promise<ScrapeResult[]>((resolve, reject) => {
 			const worker = new Worker('./src/worker.ts', {
 				workerData: { url: product.url },
@@ -59,41 +60,22 @@ cron.schedule(CRON_SCHEDULE, async () => {
 			continue
 		}
 
-		if (result.status === 'SUCCESS' && result.extractedPrice < p.threshold) {
-			const extractedPrice = Number(result.extractedPrice)
+		const product = await getProduct(p.url)
+		const last = await getLastPrice(p.url, 'NEW', result.sale)
 
-			const lastPriceRows = await db
-				.select()
-				.from(prices)
-				.innerJoin(products, eq(prices.productId, products.id))
-				.where(eq(products.url, p.url))
-				.orderBy(desc(prices.createdAt))
-				.limit(1)
-
-			const lastPriceRecord = lastPriceRows[0]
-
-			// If there's no last price record, or if the price has changed, insert a new record
-			if (
-				extractedPrice > 0
-				&& (
-					!lastPriceRecord
-					|| lastPriceRecord.prices.price !== extractedPrice
-					|| lastPriceRecord.prices.sale !== result.sale
-				)
-			) {
-				await db.insert(prices).values({
-					productId: p.id,
-					sale: result.sale,
-					price: extractedPrice,
-					condition: 'NEW',
-				})
+		if (product && last) {
+			const update = shouldUpdate(last, result, product)
+			if (update) {
+				console.log('updating')
 			}
-
-			await slackApp.client.chat.postMessage({
-				channel: process.env.SLACK_CHANNEL_ID!,
-				text: `Price drop alert! is now $${result.extractedPrice}, which is below your threshold of $${p.threshold}. \n\n ${result.productUrl}`,
-			})
 		}
+
+		await processPrice(result, p)
+
+		await slackApp.client.chat.postMessage({
+			channel: process.env.SLACK_CHANNEL_ID!,
+			text: `Price drop alert! ${p.url} is now $${result.extractedPrice}, which is below your threshold of $${p.threshold}. \n\n ${result.productUrl}`,
+		})
 	}
 
 	console.log(JSON.stringify(allResults, null, 2))

@@ -69,7 +69,7 @@ async function scrapePrice(url: string): Promise<ScrapeResult[]> {
 		try {
 			// Give it 1 second to appear. If it doesn't, we'll just move on.
 			await openboxPriceLocator.waitFor({ state: 'attached', timeout: 5000 })
-            
+
 			// Now that we know it exists, get the attribute
 			openboxPriceContent = await openboxPriceLocator.textContent()
 		}
@@ -90,7 +90,6 @@ async function scrapePrice(url: string): Promise<ScrapeResult[]> {
 			finalResult.push({
 				productUrl: url,
 				extractedPrice: Number(priceContent),
-				priceFormatted: `$${priceContent}`,
 				status: 'SUCCESS',
 				sale: isSale, // Add your new data
 				openboxPrice: openboxNum ? openboxNum : -1,
@@ -101,7 +100,6 @@ async function scrapePrice(url: string): Promise<ScrapeResult[]> {
 			finalResult.push({
 				productUrl: url,
 				extractedPrice: -1,
-				priceFormatted: null,
 				status: 'FAILURE_MISSING_CONTENT',
 				sale: false,
 				openboxPrice: -1,
@@ -121,7 +119,6 @@ async function scrapePrice(url: string): Promise<ScrapeResult[]> {
 		finalResult.push({
 			productUrl: url,
 			extractedPrice: -1,
-			priceFormatted: null,
 			status: 'FAILURE_EXCEPTION',
 			errorMessage: error.message,
 			sale: false,

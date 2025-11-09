@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "vitest",
     "build": "tsc --project tsconfig.json",
     "start": "pnpm run build && concurrently --names \"api,scheduler,slack\" \"node dist/api.js\" \"node dist/scheduler.js\" \"node dist/slack.js\" --kill-others",
     "api": "pnpm run build && node dist/api.js",
@@ -47,6 +47,7 @@
     "ts-node": "^10.9.2",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.46.2"
+    "typescript-eslint": "^8.46.2",
+    "vitest": "^4.0.8"
   }
 }
