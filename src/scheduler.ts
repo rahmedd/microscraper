@@ -1,7 +1,7 @@
 import 'dotenv/config'
 import { Worker } from 'worker_threads'
 import * as cron from 'node-cron'
-import { db, getLastPrice, getProduct, getProductAndLastPrice } from './db'
+import { db, getLastPrice, getProduct } from './db'
 import { flags, products } from './schema'
 import { eq } from 'drizzle-orm'
 import { slackApp } from './slack'
@@ -66,14 +66,13 @@ cron.schedule(CRON_SCHEDULE, async () => {
 		if (product && last) {
 			const update = shouldUpdate(last, result, product)
 			if (update) {
-				console.log('updating')
+				console.log('updating...')
+				await slackApp.client.chat.postMessage({
+					channel: process.env.SLACK_CHANNEL_ID!,
+					text: `Price drop alert! ${p.url} is now $${result.extractedPrice}, which is below your threshold of $${p.threshold}. \n\n ${result.productUrl}`,
+				})
 			}
 		}
-
-		await slackApp.client.chat.postMessage({
-			channel: process.env.SLACK_CHANNEL_ID!,
-			text: `Price drop alert! ${p.url} is now $${result.extractedPrice}, which is below your threshold of $${p.threshold}. \n\n ${result.productUrl}`,
-		})
 	}
 
 	console.log(JSON.stringify(allResults, null, 2))

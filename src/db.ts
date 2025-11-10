@@ -85,3 +85,25 @@ export async function getProductAndLastPrice(url: string, condition: PRICE_COND,
 
 	return null
 }
+
+// export async function insertPrice() {
+// 	const lastPriceRows = await db
+// 		.select()
+// 		.from(products)
+// 		.innerJoin(prices, eq(products.id, prices.id))
+// 		.where(
+// 			and(
+// 				eq(products.url, url),
+// 				eq(prices.condition, condition),
+// 				eq(prices.sale, sale),
+// 			)
+// 		)
+// 		.orderBy(desc(prices.createdAt))
+// 		.limit(1)
+
+// 	if (lastPriceRows.length > 0 && lastPriceRows[0]) {
+// 		return lastPriceRows[0]
+// 	}
+
+// 	return null
+// }
