@@ -24,6 +24,7 @@ export const products = sqliteTable('products', {
 	url: text().notNull(),
 	threshold: int().notNull(),
 	enabled: int({ mode: 'boolean' }).notNull().default(true),
+	notify: int({ mode: 'boolean' }).notNull().default(true),
 	createdAt: int({ mode: 'timestamp' })
 		.notNull()
 		.default(sql`(strftime('%s', 'now'))`),

@@ -23,7 +23,7 @@ const CRON_SCHEDULE = isDevMode ? '* * * * *' : '0 12 * * *' // Every minute in 
 
 console.error('Starting Daily Playwright Scheduler using node-cron pattern...')
 
-// Schedule the scrapePrice function to run daily
+// Schedule the scrapeMicro function to run daily
 cron.schedule(CRON_SCHEDULE, async () => {
 	console.error(`\n--- Running Daily Scrape Job at ${new Date().toLocaleTimeString()} ---`)
 

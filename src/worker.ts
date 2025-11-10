@@ -1,9 +1,9 @@
 
 import { parentPort, workerData } from 'worker_threads'
-import { scrapePrice } from './scraper'
+import { scrapeMicro } from './scrapers/micro'
 
 (async () => {
 	const { url } = workerData as { url: string }
-	const result = await scrapePrice(url)
+	const result = await scrapeMicro(url)
 	parentPort?.postMessage(result)
 })()

@@ -1,5 +1,5 @@
 import { chromium, type Browser, type Page } from 'playwright'
-import { ScrapeResult } from './types/scrape-result'
+import { ScrapeResult } from '../types/scrape-result'
 
 // The specific selector requested by the user
 const NEW_PRICE_SELECTOR = '#pricing'
@@ -12,7 +12,7 @@ const SALE_SELECTOR = '.standardDiscount'
  *
  * NOTE: This function is now exported for use by a separate scheduler file.
  */
-async function scrapePrice(url: string): Promise<ScrapeResult[]> {
+async function scrapeMicro(url: string): Promise<ScrapeResult> {
 	// Use console.error for all status/debugging messages to keep stdout clean for JSON.
 	console.error('Starting Playwright to scrape...')
 
@@ -34,9 +34,6 @@ async function scrapePrice(url: string): Promise<ScrapeResult[]> {
 	})
 
 	const page: Page = await context.newPage()
-
-	// Initialize the array that will hold the final structured result for n8n
-	const finalResult: ScrapeResult[] = []
 
 	try {
 		// 1. Navigate to the target URL
@@ -87,24 +84,24 @@ async function scrapePrice(url: string): Promise<ScrapeResult[]> {
 
 		// 5. Push the full result
 		if (priceContent) {
-			finalResult.push({
+			console.error('\nExtraction successful. JSON output prepared.')
+			return {
 				productUrl: url,
 				extractedPrice: Number(priceContent),
 				status: 'SUCCESS',
 				sale: isSale, // Add your new data
 				openboxPrice: openboxNum ? openboxNum : -1,
-			})
-			console.error('\nExtraction successful. JSON output prepared.')
+			}
 		}
 		else {
-			finalResult.push({
+			console.error(`Element ${NEW_PRICE_SELECTOR} found, but 'content' attribute was empty or null.`)
+			return {
 				productUrl: url,
 				extractedPrice: -1,
 				status: 'FAILURE_MISSING_CONTENT',
 				sale: false,
 				openboxPrice: -1,
-			})
-			console.error(`Element ${NEW_PRICE_SELECTOR} found, but 'content' attribute was empty or null.`)
+			}
 		}
 
 	}
@@ -116,14 +113,14 @@ async function scrapePrice(url: string): Promise<ScrapeResult[]> {
 		console.error('The selector might not exist or the page structure may have changed.')
 
 		// Log a failure result even on exception
-		finalResult.push({
+		return {
 			productUrl: url,
 			extractedPrice: -1,
 			status: 'FAILURE_EXCEPTION',
 			errorMessage: error.message,
 			sale: false,
 			openboxPrice: -1,
-		})
+		}
 
 	}
 	finally {
@@ -131,8 +128,7 @@ async function scrapePrice(url: string): Promise<ScrapeResult[]> {
 		await browser.close()
 		console.error('\nPlaywright browser closed.')
 	}
-	return finalResult
 }
 
 // Export the function for the scheduler to use
-export { scrapePrice }
+export { scrapeMicro }

@@ -4,6 +4,6 @@ export type ScrapeResult = {
 	extractedPrice: number
 	openboxPrice: number
 	sale: boolean
-	status: 'SUCCESS' | 'FAILURE_MISSING_CONTENT' | 'FAILURE_EXCEPTION'
+	status: 'SUCCESS' | 'FAILURE_MISSING_CONTENT' | 'FAILURE_EXCEPTION' | 'FAILURE_NO_SCRAPER'
 	errorMessage?: string
 }
