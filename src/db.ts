@@ -24,9 +24,7 @@ export async function getProduct(url: string): Promise<Product | null>{
 			updatedAt: products.updatedAt,
 		})
 		.from(products)
-		.innerJoin(prices, eq(products.id, prices.productId))
 		.where(eq(products.url, url))
-		.orderBy(desc(prices.createdAt))
 		.limit(1)
 
 	if (result.length > 0 && result[0]) {
