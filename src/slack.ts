@@ -64,4 +64,13 @@ export const start = async () => {
 // Start the app only if this file is run directly
 if (require.main === module) {
 	start()
+
+	const shutdown = async () => {
+		console.log('Slack bot shutting down...')
+		await slackApp.stop()
+		process.exit(0)
+	}
+
+	process.on('SIGTERM', shutdown)
+	process.on('SIGINT', shutdown)
 }

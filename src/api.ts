@@ -138,9 +138,20 @@ honoApp.get('/products/:id/prices', vValidator('param', idParamSchema), async (c
 // 	return c.json(deletedPrice)
 // })
 
-serve({
+const server = serve({
 	fetch: honoApp.fetch,
 	port: Number(process.env.API_PORT!)
 }, (info) => {
 	console.log(`Server is running on http://localhost:${info.port}`)
 })
+
+const shutdown = () => {
+	console.log('API server shutting down...')
+	server.close(() => {
+		console.log('API server closed.')
+		process.exit(0)
+	})
+}
+
+process.on('SIGTERM', shutdown)
+process.on('SIGINT', shutdown)
