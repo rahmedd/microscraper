@@ -101,7 +101,7 @@ export async function updateProductName(id: number, name: string) {
 }
 
 export async function getAllLastPrices(url: string) {
-	const lastPriceRows = await db
+	return db
 		.select({
 			price: prices,
 			_: sql`MAX(${prices.createdAt})`,
@@ -110,21 +110,4 @@ export async function getAllLastPrices(url: string) {
 		.innerJoin(products, eq(prices.productId, products.id))
 		.where(eq(products.url, url))
 		.groupBy(prices.condition, prices.sale)
-
-	const pricesByCondition = {} as Record<PRICE_COND, { normal: Price | null; sale: Price | null }>
-	for (const cond of conditions) {
-		pricesByCondition[cond] = { normal: null, sale: null }
-	}
-
-	for (const row of lastPriceRows) {
-		const p = row.price
-		if (p.sale) {
-			pricesByCondition[p.condition].sale = p
-		}
-		else {
-			pricesByCondition[p.condition].normal = p
-		}
-	}
-
-	return pricesByCondition
 }

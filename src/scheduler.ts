@@ -72,7 +72,6 @@ const task = cron.schedule(CRON_SCHEDULE, async () => {
 		}
 
 		const allLastPrices = await getAllLastPrices(p.url)
-		const saleKey = result.sale ? 'sale' : 'normal'
 
 		for (const { condition, price } of result.prices) {
 			if (price <= 0) {
@@ -80,7 +79,7 @@ const task = cron.schedule(CRON_SCHEDULE, async () => {
 				continue
 			}
 
-			const lastCond = allLastPrices[condition]?.[saleKey] || null
+			const lastCond = allLastPrices.find(lp => lp.price.condition === condition && lp.price.sale === result.sale)?.price || null
 			const updateCond = shouldUpdate(lastCond, price, result, p)
 
 			if (updateCond) {
