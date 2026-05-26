@@ -2,7 +2,7 @@ import 'dotenv/config'
 import path from 'path'
 import { Worker } from 'worker_threads'
 import * as cron from 'node-cron'
-import { db, getAllLastPrices, insertPrice } from './db'
+import { db, getAllLastPrices, insertPrice, updateProductName } from './db'
 import { flags, products, conditions, PRICE_COND } from './schema'
 import { eq } from 'drizzle-orm'
 import { postSlackMessage } from './slack-client'
@@ -65,26 +65,33 @@ const task = cron.schedule(CRON_SCHEDULE, async () => {
 			continue
 		}
 
+		if (result.productName && p.name !== result.productName) {
+			console.log(`Updating product name for ${p.url} to: ${result.productName}`)
+			await updateProductName(p.id, result.productName)
+			p.name = result.productName
+		}
+
 		const allLastPrices = await getAllLastPrices(p.url)
 		const saleKey = result.sale ? 'sale' : 'normal'
 
-		for (const cond of conditions) {
-			const currentPrice = result.prices[cond]
-			if (currentPrice === undefined || currentPrice <= 0) {
-				console.log(`Price not found for condition ${cond}, skipping...`)
+		for (const { condition, price } of result.prices) {
+			if (price <= 0) {
+				console.log(`Invalid price ${price} for condition ${condition}, skipping...`)
 				continue
 			}
 
-			const lastCond = allLastPrices[cond]?.[saleKey] || null
-			const updateCond = shouldUpdate(lastCond, currentPrice, result, p)
+			const lastCond = allLastPrices[condition]?.[saleKey] || null
+			const updateCond = shouldUpdate(lastCond, price, result, p)
 
 			if (updateCond) {
-				console.log(`updating ${cond} price...`)
+				console.log(`updating ${condition} price...`)
+				const itemName = p.name || result.productName || p.url
+				const message = `*Price Drop Alert!*\n*Item:* <${p.url}|${itemName}>\n*Condition:* ${condition}\n*Previous Price:* $${lastCond ? lastCond.price : 'N/A'}\n*New Price:* $${price}\n*Threshold:* $${p.threshold}`
 				await postSlackMessage(
 					process.env.SLACK_CHANNEL_ID!,
-					`Price drop alert! ${cond} ${p.url} is now $${currentPrice}, which is below your threshold of $${p.threshold}. \n\n ${result.productUrl}`,
+					message
 				)
-				await insertPrice(p.id, result.sale, currentPrice, cond)
+				await insertPrice(p.id, result.sale, price, condition)
 			}
 		}
 	}

@@ -1,5 +1,6 @@
 import { chromium, type Browser, type Page } from 'playwright'
 import { ScrapeResult } from './types/scrape-result'
+import type { PRICE_COND } from './schema'
 
 // The specific selector requested by the user
 const NEW_PRICE_SELECTOR = '#pricing'
@@ -97,16 +98,23 @@ async function scrapePrice(url: string): Promise<ScrapeResult[]> {
 		// It's safe to use here since the main element has already loaded.
 		const saleCount = await saleLocator.count()
 		const isSale = saleCount > 0
-		const openboxNum = openboxPriceContent ? parseFloat(openboxPriceContent.split('$')[1]) : -1
+		const openboxNum = openboxPriceContent ? parseFloat(openboxPriceContent.split('$')[1]) : undefined
+
+		const pageTitle = await page.title()
 
 		// 5. Push the full result
 		if (priceContent) {
+			const pricesObj: { condition: PRICE_COND, price: number }[] = []
+			pricesObj.push({ condition: 'NEW', price: Number(priceContent) })
+			
+			if (openboxNum) {
+				pricesObj.push({ condition: 'OPENBOX', price: openboxNum })
+			}
+
 			finalResult.push({
 				productUrl: url,
-				prices: {
-					NEW: Number(priceContent),
-					OPENBOX: openboxNum ? openboxNum : -1,
-				},
+				productName: pageTitle,
+				prices: pricesObj,
 				status: 'SUCCESS',
 				sale: isSale, // Add your new data
 			})
@@ -115,7 +123,7 @@ async function scrapePrice(url: string): Promise<ScrapeResult[]> {
 		else {
 			finalResult.push({
 				productUrl: url,
-				prices: {},
+				prices: [],
 				status: 'FAILURE_MISSING_CONTENT',
 				sale: false,
 			})
@@ -133,7 +141,7 @@ async function scrapePrice(url: string): Promise<ScrapeResult[]> {
 		// Log a failure result even on exception
 		finalResult.push({
 			productUrl: url,
-			prices: {},
+			prices: [],
 			status: 'FAILURE_EXCEPTION',
 			errorMessage: error.message,
 			sale: false,

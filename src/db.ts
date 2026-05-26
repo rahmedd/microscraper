@@ -17,6 +17,7 @@ export async function getProduct(url: string): Promise<Product | null> {
 	const result: Product[] = await db
 		.select({
 			id: products.id,
+			name: products.name,
 			url: products.url,
 			threshold: products.threshold,
 			enabled: products.enabled,
@@ -91,6 +92,12 @@ export async function insertPrice(productId: number, sale: boolean, price: numbe
 		price: price,
 		condition: condition,
 	})
+}
+
+export async function updateProductName(id: number, name: string) {
+	await db.update(products)
+		.set({ name })
+		.where(eq(products.id, id))
 }
 
 export async function getAllLastPrices(url: string) {

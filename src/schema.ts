@@ -21,6 +21,7 @@ export const flags = sqliteTable('flags', {
 
 export const products = sqliteTable('products', {
 	id: int().primaryKey({ autoIncrement: true }),
+	name: text(), // not a source of truth, just for user convenience
 	url: text().notNull(),
 	threshold: int().notNull(),
 	enabled: int({ mode: 'boolean' }).notNull().default(true),
