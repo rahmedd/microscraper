@@ -1,8 +1,6 @@
 import 'dotenv/config'
 import crypto from 'crypto'
 import { logger, traceStorage } from './logger'
-import path from 'path'
-import { Worker } from 'worker_threads'
 import * as cron from 'node-cron'
 import { db, getAllLastPrices, insertPrice, updateProductName } from './db'
 import { flags, products, conditions, PRICE_COND } from './schema'
@@ -11,6 +9,7 @@ import { postSlackMessage } from './slack-client'
 import { checkEnvVars } from './utils'
 import { ScrapeResult } from './types/scrape-result'
 import { shouldUpdate } from './price-processor'
+import { getScraper } from './scrapers'
 
 checkEnvVars()
 
@@ -31,24 +30,12 @@ const task = cron.schedule(CRON_SCHEDULE, async () => {
 			return
 		}
 
-		const workerPath = __filename.endsWith('.ts')
-			? path.join(__dirname, 'worker.ts')
-			: path.join(__dirname, 'worker.js')
-
 		const urlsToScrape = await db.select().from(products).where(eq(products.enabled, true))
 		const scrapingJobs = urlsToScrape.map(product => {
 			const workerTraceId = crypto.randomUUID()
-			return new Promise<ScrapeResult[]>((resolve, reject) => {
-				const worker = new Worker(workerPath, {
-					workerData: { url: product.url, traceId: workerTraceId, store: product.store },
-					...(workerPath.endsWith('.ts') && { execArgv: ['--require', 'tsx/cjs'] }),
-				})
-				worker.on('message', resolve)
-				worker.on('error', reject)
-				worker.on('exit', (code) => {
-					if (code !== 0)
-						reject(new Error(`Worker stopped with exit code ${code}`))
-				})
+			return traceStorage.run(workerTraceId, () => {
+				const scrape = getScraper(product.store)
+				return scrape(product.url)
 			})
 		})
 
