@@ -1,3 +1,5 @@
+import { logger } from './logger'
+
 export function checkEnvVars() {
 	const requiredEnvVars = [
 		'NODE_ENV',
@@ -11,10 +13,10 @@ export function checkEnvVars() {
 
 	for (const envVar of requiredEnvVars) {
 		if (!process.env[envVar]) {
-			console.error(`Error: Environment variable ${envVar} is not set.`)
+			logger.error(`Error: Environment variable ${envVar} is not set.`)
 			process.exit(1)
 		}
 	}
-	console.log('All required environment variables are set.')
+	logger.info('All required environment variables are set.')
 
 }

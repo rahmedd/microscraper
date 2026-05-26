@@ -1,5 +1,6 @@
 import { Price, Product } from './schema'
 import type { ScrapeResult } from './types/scrape-result'
+import { logger } from './logger'
 
 export function shouldUpdate(last: Price | null, currentPrice: number, result: ScrapeResult, product: Product): boolean {
 	const scrapeSucessful = result.status === 'SUCCESS'
@@ -9,7 +10,7 @@ export function shouldUpdate(last: Price | null, currentPrice: number, result: S
 
 	const ret = scrapeSucessful && priceIsValid && priceIsAboveThreshold && priceHasChanged
 
-	console.log({
+	logger.info({
 		scrapeSucessful,
 		priceIsValid,
 		priceIsAboveThreshold,

@@ -1,6 +1,7 @@
 import { chromium, type Browser, type Page } from 'playwright'
 import { ScrapeResult } from './types/scrape-result'
 import type { PRICE_COND } from './schema'
+import { logger } from './logger'
 
 // The specific selector requested by the user
 const NEW_PRICE_SELECTOR = '#pricing'
@@ -14,32 +15,30 @@ const SALE_SELECTOR = '.standardDiscount'
  * NOTE: This function is now exported for use by a separate scheduler file.
  */
 async function scrapePrice(url: string): Promise<ScrapeResult[]> {
-	// Use console.error for all status/debugging messages to keep stdout clean for JSON.
-	console.error('Starting Playwright to scrape...')
-
-	// Launch Chromium in headless mode, but use arguments to bypass common bot detection
-	const browser: Browser = await chromium.launch({
-		headless: true, // Switched back to true, with anti-detection arguments below
-		args: [
-			// Adds common arguments to mimic a real browser and avoid detection
-			'--no-sandbox',
-			'--disable-setuid-sandbox',
-			// Disables the most common Playwright detection (navigator.webdriver)
-			'--disable-blink-features=AutomationControlled',
-		],
-	})
-
-	const context = await browser.newContext({
-		viewport: { width: 1280, height: 720 },
-		userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
-	})
-
-	const page: Page = await context.newPage()
-
-	// Initialize the array that will hold the final structured result for n8n
+	logger.info('Starting Playwright to scrape...')
 	const finalResult: ScrapeResult[] = []
+	let browser: Browser | null = null
 
 	try {
+		// Launch Chromium in headless mode, but use arguments to bypass common bot detection
+		browser = await chromium.launch({
+			headless: true, // Switched back to true, with anti-detection arguments below
+			args: [
+				// Adds common arguments to mimic a real browser and avoid detection
+				'--no-sandbox',
+				'--disable-setuid-sandbox',
+				// Disables the most common Playwright detection (navigator.webdriver)
+				'--disable-blink-features=AutomationControlled',
+			],
+		})
+
+		const context = await browser.newContext({
+			viewport: { width: 1280, height: 720 },
+			userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
+		})
+
+		const page: Page = await context.newPage()
+
 		// Ensure storeid is appended to the url
 		const storeId = process.env.MICRO_STORE_ID
 		let finalUrl = url
@@ -50,12 +49,12 @@ async function scrapePrice(url: string): Promise<ScrapeResult[]> {
 				finalUrl = parsedUrl.toString()
 			}
 			catch (e) {
-				console.error('Invalid URL passed to scraper:', url)
+				logger.error(`Invalid URL passed to scraper: ${url}`)
 			}
 		}
 
 		// 1. Navigate to the target URL
-		console.error(`Navigating to ${finalUrl}`)
+		logger.info(`Navigating to ${finalUrl}`)
 		await page.goto(finalUrl, { timeout: 10000 })
 
 		try {
@@ -63,10 +62,10 @@ async function scrapePrice(url: string): Promise<ScrapeResult[]> {
 			const closeButton = page.locator('.close-button')
 			await closeButton.waitFor({ state: 'visible', timeout: 5000 })
 			await closeButton.click()
-			console.error('Clicked the close button.')
+			logger.info('Clicked the close button.')
 		}
 		catch {
-			console.error('Close button not found or not clickable, proceeding without clicking.')
+			logger.info('Close button not found or not clickable, proceeding without clicking.')
 		}
 
 		// --- Define all your locators first ---
@@ -75,7 +74,7 @@ async function scrapePrice(url: string): Promise<ScrapeResult[]> {
 		const saleLocator = page.locator(SALE_SELECTOR)
 
 		// 2. Wait for the *mandatory* element to exist
-		console.error(`Waiting for element: ${NEW_PRICE_SELECTOR}`)
+		logger.info(`Waiting for element: ${NEW_PRICE_SELECTOR}`)
 		await priceLocator.waitFor({ state: 'attached', timeout: 10000 })
 		const priceContent = await priceLocator.getAttribute('content')
 
@@ -90,7 +89,7 @@ async function scrapePrice(url: string): Promise<ScrapeResult[]> {
 		}
 		catch {
 			// TimeoutError: Element not found, which is fine for an optional element.
-			console.error('Note: Openbox price not found (which is OK).')
+			logger.info('Note: Openbox price not found (which is OK).')
 		}
 
 		// 4. Safely check for the *optional* sale element
@@ -113,17 +112,17 @@ async function scrapePrice(url: string): Promise<ScrapeResult[]> {
 					const parsed = parseInt(invCountStr.trim(), 10);
 					if (!isNaN(parsed)) {
 						inventoryCount = parsed;
-						console.error(`Inventory count found: ${inventoryCount}`);
+						logger.info(`Inventory count found: ${inventoryCount}`);
 					}
 				}
 			}
 			else {
 				inventoryCount = 0;
-				console.error(`Inventory count element not found, treating as out of stock.`);
+				logger.info(`Inventory count element not found, treating as out of stock.`);
 			}
 		}
 		catch (e: any) {
-			console.error(`Note: Error checking inventory count (which is OK). Error: ${e.message}`);
+			logger.info(`Note: Error checking inventory count (which is OK). Error: ${e.message}`);
 		}
 
 		// 5. Push the full result
@@ -131,7 +130,7 @@ async function scrapePrice(url: string): Promise<ScrapeResult[]> {
 			const pricesObj: { condition: PRICE_COND, price: number }[] = []
 
 			if (inventoryCount === 0) {
-				console.error('NEW inventory count is 0, omitting NEW condition from results.')
+				logger.info('NEW inventory count is 0, omitting NEW condition from results.')
 			}
 			else {
 				pricesObj.push({ condition: 'NEW', price: Number(priceContent) })
@@ -148,7 +147,7 @@ async function scrapePrice(url: string): Promise<ScrapeResult[]> {
 				status: 'SUCCESS',
 				sale: isSale, // Add your new data
 			})
-			console.error('\nExtraction successful. JSON output prepared.')
+			logger.info('Extraction successful. JSON output prepared.')
 		}
 		else {
 			finalResult.push({
@@ -157,31 +156,34 @@ async function scrapePrice(url: string): Promise<ScrapeResult[]> {
 				status: 'FAILURE_MISSING_CONTENT',
 				sale: false,
 			})
-			console.error(`Element ${NEW_PRICE_SELECTOR} found, but 'content' attribute was empty or null.`)
+			logger.error(`Element ${NEW_PRICE_SELECTOR} found, but 'content' attribute was empty or null.`)
 		}
 
 	}
-	// ... rest of your code (catch, finally) ...
 	catch (e: unknown) {
 		// General error handling for navigation or selection failures
 		const error = e as Error
-		console.error('\nAn error occurred during scraping:', error.message)
-		console.error('The selector might not exist or the page structure may have changed.')
+		// Playwright sometimes inserts ANSI colors in its error messages which break logs, so we strip them:
+		const cleanMessage = error.message.replace(/\x1B\[[0-9;]*m/g, '')
+		logger.error(`An error occurred during scraping: ${cleanMessage}`)
+		logger.error('The selector might not exist or the page structure may have changed.')
 
 		// Log a failure result even on exception
 		finalResult.push({
 			productUrl: url,
 			prices: [],
 			status: 'FAILURE_EXCEPTION',
-			errorMessage: error.message,
+			errorMessage: cleanMessage,
 			sale: false,
 		})
 
 	}
 	finally {
 		// Ensure the browser is closed
-		await browser.close()
-		console.error('\nPlaywright browser closed.')
+		if (browser) {
+			await browser.close()
+			logger.info('Playwright browser closed.')
+		}
 	}
 	return finalResult
 }

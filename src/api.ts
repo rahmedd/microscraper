@@ -1,4 +1,6 @@
 import 'dotenv/config'
+import crypto from 'crypto'
+import { logger, traceStorage } from './logger'
 import { Hono } from 'hono'
 import { serve } from '@hono/node-server'
 import { db } from './db'
@@ -16,6 +18,13 @@ import {
 checkEnvVars()
 
 export const honoApp = new Hono().basePath('/api')
+
+honoApp.use('*', async (c, next) => {
+	const traceId = crypto.randomUUID()
+	await traceStorage.run(traceId, async () => {
+		await next()
+	})
+})
 
 honoApp.get('/', (c) => {
 	return c.text('Hello Hono!')
@@ -142,13 +151,13 @@ const server = serve({
 	fetch: honoApp.fetch,
 	port: Number(process.env.API_PORT!)
 }, (info) => {
-	console.log(`Server is running on http://localhost:${info.port}`)
+	logger.info(`Server is running on http://localhost:${info.port}`)
 })
 
 const shutdown = () => {
-	console.log('API server shutting down...')
+	logger.info('API server shutting down...')
 	server.close(() => {
-		console.log('API server closed.')
+		logger.info('API server closed.')
 		process.exit(0)
 	})
 }

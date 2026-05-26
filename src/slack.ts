@@ -1,4 +1,6 @@
 import 'dotenv/config'
+import crypto from 'crypto'
+import { logger as appLogger, traceStorage } from './logger'
 import { App, type AllMiddlewareArgs, type SlackEventMiddlewareArgs } from '@slack/bolt'
 import { db } from './db'
 import { flags } from './schema'
@@ -11,13 +13,20 @@ export const slackApp = new App({
 	appToken: process.env.SLACK_APP_TOKEN
 })
 
+slackApp.use(async ({ next }) => {
+	const traceId = crypto.randomUUID()
+	await traceStorage.run(traceId, async () => {
+		await next()
+	})
+})
+
 const sampleMessageCallback = async ({
 	context,
 	logger,
 	say,
 }: AllMiddlewareArgs & SlackEventMiddlewareArgs<'message'>) => {
 	try {
-		console.log('hello!')
+		appLogger.info('hello!')
 		const greeting = context.matches[0]
 		await say(`${greeting}, how are you?`)
 	}
@@ -66,7 +75,7 @@ if (require.main === module) {
 	start()
 
 	const shutdown = async () => {
-		console.log('Slack bot shutting down...')
+		appLogger.info('Slack bot shutting down...')
 		await slackApp.stop()
 		process.exit(0)
 	}

@@ -6,8 +6,8 @@
   "scripts": {
     "test": "vitest",
     "build": "tsc --project tsconfig.json",
-    "start": "pnpm run build && concurrently --names \"api,scheduler,slack\" \"node dist/api.js\" \"node dist/scheduler.js\" \"node dist/slack.js\" --kill-others",
-    "dev": "concurrently --names \"api,scheduler,slack\" \"tsx watch src/api.ts\" \"tsx watch src/scheduler.ts\" \"tsx watch src/slack.ts\" --kill-others",
+    "start": "pnpm run build && concurrently --names \"api,scheduler,slack\" -c \"bgBlue.bold,bgMagenta.bold,bgGreen.bold\" \"node dist/api.js\" \"node dist/scheduler.js\" \"node dist/slack.js\" --kill-others",
+    "dev": "concurrently --names \"api,scheduler,slack\" -c \"bgBlue.bold,bgMagenta.bold,bgGreen.bold\" \"tsx watch src/api.ts\" \"tsx watch src/scheduler.ts\" \"tsx watch src/slack.ts\" --kill-others",
     "dev:api": "tsx watch src/api.ts",
     "dev:scheduler": "tsx watch src/scheduler.ts",
     "dev:slack": "tsx watch src/slack.ts",
@@ -37,6 +37,7 @@
     "hono": "^4.10.4",
     "hono-openapi": "^1.1.1",
     "node-cron": "^4.2.1",
+    "pino": "^9.14.0",
     "playwright": "^1.56.1",
     "valibot": "^1.1.0"
   },
@@ -47,6 +48,7 @@
     "concurrently": "^9.2.1",
     "drizzle-kit": "^0.31.6",
     "eslint": "^9.38.0",
+    "pino-pretty": "^11.0.0",
     "rimraf": "^6.1.0",
     "ts-node": "^10.9.2",
     "tsx": "^4.20.6",
