@@ -65,7 +65,7 @@ const task = cron.schedule(CRON_SCHEDULE, async () => {
 			continue
 		}
 
-		if (result.productName && p.name !== result.productName) {
+		if (result.productName && !p.name) {
 			console.log(`Updating product name for ${p.url} to: ${result.productName}`)
 			await updateProductName(p.id, result.productName)
 			p.name = result.productName
@@ -91,6 +91,33 @@ const task = cron.schedule(CRON_SCHEDULE, async () => {
 					message
 				)
 				await insertPrice(p.id, result.sale, price, condition)
+			}
+		}
+
+		if (result.status === 'SUCCESS') {
+			const latestPerCondition = new Map<string, any>()
+			for (const lp of allLastPrices) {
+				const existing = latestPerCondition.get(lp.price.condition)
+				if (!existing || new Date(lp.price.createdAt).getTime() > new Date(existing.price.createdAt).getTime()) {
+					latestPerCondition.set(lp.price.condition, lp)
+				}
+			}
+
+			for (const lp of latestPerCondition.values()) {
+				const lastKnownPrice = lp.price
+				if (lastKnownPrice.price > 0) {
+					const currentlyInStock = result.prices.some(pr => pr.condition === lastKnownPrice.condition)
+					if (!currentlyInStock) {
+						console.log(`${lastKnownPrice.condition} is no longer available for ${p.url}`)
+						const itemName = p.name || result.productName || p.url
+						const message = `*Out of Stock Alert!*\n*Item:* <${p.url}|${itemName}>\n*Condition:* ${lastKnownPrice.condition}\n*Was:* $${lastKnownPrice.price}`
+						await postSlackMessage(
+							process.env.SLACK_CHANNEL_ID!,
+							message
+						)
+						await insertPrice(p.id, lastKnownPrice.sale, 0, lastKnownPrice.condition)
+					}
+				}
 			}
 		}
 	}

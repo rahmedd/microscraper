@@ -102,11 +102,41 @@ async function scrapePrice(url: string): Promise<ScrapeResult[]> {
 
 		const pageTitle = await page.title()
 
+		// Safely check inventory count for NEW items
+		let inventoryCount = -1;
+		try {
+			const inventoryLocator = page.locator('.inventoryCnt');
+			const count = await inventoryLocator.count();
+			if (count > 0) {
+				const invCountStr = await inventoryLocator.first().evaluate(el => el.firstChild?.textContent);
+				if (invCountStr) {
+					const parsed = parseInt(invCountStr.trim(), 10);
+					if (!isNaN(parsed)) {
+						inventoryCount = parsed;
+						console.error(`Inventory count found: ${inventoryCount}`);
+					}
+				}
+			}
+			else {
+				inventoryCount = 0;
+				console.error(`Inventory count element not found, treating as out of stock.`);
+			}
+		}
+		catch (e: any) {
+			console.error(`Note: Error checking inventory count (which is OK). Error: ${e.message}`);
+		}
+
 		// 5. Push the full result
 		if (priceContent) {
 			const pricesObj: { condition: PRICE_COND, price: number }[] = []
-			pricesObj.push({ condition: 'NEW', price: Number(priceContent) })
-			
+
+			if (inventoryCount === 0) {
+				console.error('NEW inventory count is 0, omitting NEW condition from results.')
+			}
+			else {
+				pricesObj.push({ condition: 'NEW', price: Number(priceContent) })
+			}
+
 			if (openboxNum) {
 				pricesObj.push({ condition: 'OPENBOX', price: openboxNum })
 			}
