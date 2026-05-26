@@ -39,9 +39,23 @@ async function scrapePrice(url: string): Promise<ScrapeResult[]> {
 	const finalResult: ScrapeResult[] = []
 
 	try {
+		// Ensure storeid is appended to the url
+		const storeId = process.env.MICRO_STORE_ID
+		let finalUrl = url
+		if (storeId) {
+			try {
+				const parsedUrl = new URL(url)
+				parsedUrl.searchParams.set('storeid', storeId)
+				finalUrl = parsedUrl.toString()
+			}
+			catch (e) {
+				console.error('Invalid URL passed to scraper:', url)
+			}
+		}
+
 		// 1. Navigate to the target URL
-		console.error(`Navigating to ${url}`)
-		await page.goto(url, { timeout: 10000 })
+		console.error(`Navigating to ${finalUrl}`)
+		await page.goto(finalUrl, { timeout: 10000 })
 
 		try {
 			// Wait for the button to be visible before clicking
