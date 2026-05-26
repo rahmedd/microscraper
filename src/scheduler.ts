@@ -2,8 +2,8 @@ import 'dotenv/config'
 import path from 'path'
 import { Worker } from 'worker_threads'
 import * as cron from 'node-cron'
-import { db, getLastPrice, insertPrice } from './db'
-import { flags, products } from './schema'
+import { db, getAllLastPrices, insertPrice } from './db'
+import { flags, products, conditions, PRICE_COND } from './schema'
 import { eq } from 'drizzle-orm'
 import { postSlackMessage } from './slack-client'
 import { checkEnvVars } from './utils'
@@ -36,7 +36,7 @@ const task = cron.schedule(CRON_SCHEDULE, async () => {
 		new Promise<ScrapeResult[]>((resolve, reject) => {
 			const worker = new Worker(workerPath, {
 				workerData: { url: product.url },
-			...(workerPath.endsWith('.ts') && { execArgv: ['--require', 'tsx/cjs'] }),
+				...(workerPath.endsWith('.ts') && { execArgv: ['--require', 'tsx/cjs'] }),
 			})
 			worker.on('message', resolve)
 			worker.on('error', reject)
@@ -65,17 +65,27 @@ const task = cron.schedule(CRON_SCHEDULE, async () => {
 			continue
 		}
 
-		const last = await getLastPrice(p.url, 'NEW', result.sale)
+		const allLastPrices = await getAllLastPrices(p.url)
+		const saleKey = result.sale ? 'sale' : 'normal'
 
-		const update = shouldUpdate(last, result, p)
-		if (update) {
-			console.log('updating...')
-			await postSlackMessage(
-				process.env.SLACK_CHANNEL_ID!,
-				`Price drop alert! ${p.url} is now $${result.extractedPrice}, which is below your threshold of $${p.threshold}. \n\n ${result.productUrl}`,
-			)
+		for (const cond of conditions) {
+			const currentPrice = result.prices[cond]
+			if (currentPrice === undefined || currentPrice <= 0) {
+				console.log(`Price not found for condition ${cond}, skipping...`)
+				continue
+			}
 
-			await insertPrice(p.id, result.sale, result.extractedPrice, 'NEW')
+			const lastCond = allLastPrices[cond]?.[saleKey] || null
+			const updateCond = shouldUpdate(lastCond, currentPrice, result, p)
+
+			if (updateCond) {
+				console.log(`updating ${cond} price...`)
+				await postSlackMessage(
+					process.env.SLACK_CHANNEL_ID!,
+					`Price drop alert! ${cond} ${p.url} is now $${currentPrice}, which is below your threshold of $${p.threshold}. \n\n ${result.productUrl}`,
+				)
+				await insertPrice(p.id, result.sale, currentPrice, cond)
+			}
 		}
 	}
 

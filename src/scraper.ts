@@ -103,20 +103,21 @@ async function scrapePrice(url: string): Promise<ScrapeResult[]> {
 		if (priceContent) {
 			finalResult.push({
 				productUrl: url,
-				extractedPrice: Number(priceContent),
+				prices: {
+					NEW: Number(priceContent),
+					OPENBOX: openboxNum ? openboxNum : -1,
+				},
 				status: 'SUCCESS',
 				sale: isSale, // Add your new data
-				openboxPrice: openboxNum ? openboxNum : -1,
 			})
 			console.error('\nExtraction successful. JSON output prepared.')
 		}
 		else {
 			finalResult.push({
 				productUrl: url,
-				extractedPrice: -1,
+				prices: {},
 				status: 'FAILURE_MISSING_CONTENT',
 				sale: false,
-				openboxPrice: -1,
 			})
 			console.error(`Element ${NEW_PRICE_SELECTOR} found, but 'content' attribute was empty or null.`)
 		}
@@ -132,11 +133,10 @@ async function scrapePrice(url: string): Promise<ScrapeResult[]> {
 		// Log a failure result even on exception
 		finalResult.push({
 			productUrl: url,
-			extractedPrice: -1,
+			prices: {},
 			status: 'FAILURE_EXCEPTION',
 			errorMessage: error.message,
 			sale: false,
-			openboxPrice: -1,
 		})
 
 	}

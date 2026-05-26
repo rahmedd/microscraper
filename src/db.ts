@@ -1,6 +1,6 @@
-import { and, desc, eq } from 'drizzle-orm'
+import { and, desc, eq, sql } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/libsql'
-import { PRICE_COND, prices, products, Price, flags, Product } from './schema'
+import { PRICE_COND, prices, products, Price, flags, Product, conditions } from './schema'
 
 export const db = drizzle({
 	connection: {
@@ -13,7 +13,7 @@ export const db = drizzle({
 	},
 })
 
-export async function getProduct(url: string): Promise<Product | null>{
+export async function getProduct(url: string): Promise<Product | null> {
 	const result: Product[] = await db
 		.select({
 			id: products.id,
@@ -91,4 +91,33 @@ export async function insertPrice(productId: number, sale: boolean, price: numbe
 		price: price,
 		condition: condition,
 	})
+}
+
+export async function getAllLastPrices(url: string) {
+	const lastPriceRows = await db
+		.select({
+			price: prices,
+			_: sql`MAX(${prices.createdAt})`,
+		})
+		.from(prices)
+		.innerJoin(products, eq(prices.productId, products.id))
+		.where(eq(products.url, url))
+		.groupBy(prices.condition, prices.sale)
+
+	const pricesByCondition = {} as Record<PRICE_COND, { normal: Price | null; sale: Price | null }>
+	for (const cond of conditions) {
+		pricesByCondition[cond] = { normal: null, sale: null }
+	}
+
+	for (const row of lastPriceRows) {
+		const p = row.price
+		if (p.sale) {
+			pricesByCondition[p.condition].sale = p
+		}
+		else {
+			pricesByCondition[p.condition].normal = p
+		}
+	}
+
+	return pricesByCondition
 }
