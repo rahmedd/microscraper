@@ -19,6 +19,7 @@ export async function getProduct(url: string): Promise<Product | null> {
 			id: products.id,
 			name: products.name,
 			url: products.url,
+			store: products.store,
 			threshold: products.threshold,
 			enabled: products.enabled,
 			createdAt: products.createdAt,

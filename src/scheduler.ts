@@ -40,7 +40,7 @@ const task = cron.schedule(CRON_SCHEDULE, async () => {
 			const workerTraceId = crypto.randomUUID()
 			return new Promise<ScrapeResult[]>((resolve, reject) => {
 				const worker = new Worker(workerPath, {
-					workerData: { url: product.url, traceId: workerTraceId },
+					workerData: { url: product.url, traceId: workerTraceId, store: product.store },
 					...(workerPath.endsWith('.ts') && { execArgv: ['--require', 'tsx/cjs'] }),
 				})
 				worker.on('message', resolve)

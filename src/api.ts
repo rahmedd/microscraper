@@ -86,15 +86,15 @@ honoApp.get('/products/:id', vValidator('param', idParamSchema), async (c) => {
 })
 
 honoApp.post('/products', vValidator('json', createProductSchema), async (c) => {
-	const { url, threshold, enabled } = c.req.valid('json')
-	const newProduct = await db.insert(products).values({ url, threshold, enabled }).returning()
+	const { url, store, threshold, enabled } = c.req.valid('json')
+	const newProduct = await db.insert(products).values({ url, store, threshold, enabled }).returning()
 	return c.json(newProduct)
 })
 
 honoApp.put('/products/:id', vValidator('param', idParamSchema), vValidator('json', updateProductSchema), async (c) => {
 	const { id } = c.req.valid('param')
-	const { url, threshold, enabled } = c.req.valid('json')
-	const updatedProduct = await db.update(products).set({ url, threshold, enabled }).where(eq(products.id, Number(id))).returning()
+	const { url, store, threshold, enabled } = c.req.valid('json')
+	const updatedProduct = await db.update(products).set({ url, store, threshold, enabled }).where(eq(products.id, Number(id))).returning()
 	return c.json(updatedProduct)
 })
 

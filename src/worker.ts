@@ -1,11 +1,13 @@
 import { logger, traceStorage } from './logger'
 import { parentPort, workerData } from 'worker_threads'
-import { scrapePrice } from './scraper'
+import { getScraper } from './scrapers'
 
 (async () => {
-	const { url, traceId } = workerData as { url: string, traceId: string }
+	const { url, traceId, store } = workerData as { url: string, traceId: string, store: string }
 	await traceStorage.run(traceId, async () => {
-		const result = await scrapePrice(url)
+		const scrape = getScraper(store)
+		const result = await scrape(url)
 		parentPort?.postMessage(result)
 	})
 })()
+

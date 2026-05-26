@@ -1,7 +1,7 @@
 import { chromium, type Browser, type Page } from 'playwright'
-import { ScrapeResult } from './types/scrape-result'
-import type { PRICE_COND } from './schema'
-import { logger } from './logger'
+import { ScrapeResult } from '../types/scrape-result'
+import type { PRICE_COND } from '../schema'
+import { logger } from '../logger'
 
 // The specific selector requested by the user
 const NEW_PRICE_SELECTOR = '#pricing'
@@ -188,5 +188,5 @@ async function scrapePrice(url: string): Promise<ScrapeResult[]> {
 	return finalResult
 }
 
-// Export the function for the scheduler to use
+// Export the function for the registry to use
 export { scrapePrice }
