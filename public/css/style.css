@@ -1,0 +1,304 @@
+/* ── Design Tokens ── */
+:root {
+	--bg-primary: #0d1117;
+	--bg-secondary: #161b22;
+	--bg-card: #1c2128;
+	--bg-card-hover: #21262d;
+	--border-default: #30363d;
+	--border-accent: #388bfd;
+	--text-primary: #e6edf3;
+	--text-secondary: #8b949e;
+	--text-muted: #6e7681;
+	--accent: #58a6ff;
+	--accent-subtle: rgba(56, 139, 253, 0.15);
+	--green: #3fb950;
+	--green-subtle: rgba(63, 185, 80, 0.15);
+	--red: #f85149;
+	--red-subtle: rgba(248, 81, 73, 0.15);
+	--orange: #d29922;
+	--purple: #bc8cff;
+	--cyan: #39d2c0;
+	--chart-new: #58a6ff;
+	--chart-openbox: #d29922;
+	--chart-refurb: #bc8cff;
+	--chart-used: #39d2c0;
+	--radius: 12px;
+	--shadow: 0 1px 3px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.25);
+	--transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Reset & Base ── */
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+	margin: 0;
+	font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+	background: var(--bg-primary);
+	color: var(--text-primary);
+	min-height: 100vh;
+	-webkit-font-smoothing: antialiased;
+}
+
+/* ── Header ── */
+header {
+	background: var(--bg-secondary);
+	border-bottom: 1px solid var(--border-default);
+	padding: 1.5rem 2rem;
+}
+
+.header-inner {
+	max-width: 1100px;
+	margin: 0 auto;
+}
+
+h1 {
+	margin: 0;
+	font-size: 1.75rem;
+	font-weight: 700;
+	letter-spacing: -0.5px;
+	color: var(--text-primary);
+}
+
+.tagline {
+	margin: 0.25rem 0 0;
+	font-size: 0.85rem;
+	color: var(--text-secondary);
+	font-weight: 400;
+}
+
+/* ── Main Container ── */
+.container {
+	max-width: 1100px;
+	margin: 0 auto;
+	padding: 1.5rem;
+	display: flex;
+	flex-direction: column;
+	gap: 1.25rem;
+}
+
+/* ── Card ── */
+.card {
+	background: var(--bg-card);
+	border: 1px solid var(--border-default);
+	border-radius: var(--radius);
+	padding: 1.25rem 1.5rem;
+	box-shadow: var(--shadow);
+}
+
+/* ── Controls ── */
+.controls {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+}
+
+.controls label {
+	font-weight: 600;
+	font-size: 0.875rem;
+	color: var(--text-secondary);
+	white-space: nowrap;
+}
+
+select {
+	flex: 1;
+	min-width: 0;
+	text-overflow: ellipsis;
+	padding: 0.625rem 2.25rem 0.625rem 0.875rem;
+	border-radius: 8px;
+	background: var(--bg-secondary);
+	border: 1px solid var(--border-default);
+	color: var(--text-primary);
+	font-size: 0.875rem;
+	font-family: inherit;
+	outline: none;
+	cursor: pointer;
+	transition: border-color var(--transition), box-shadow var(--transition);
+	appearance: none;
+	background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238b949e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+	background-repeat: no-repeat;
+	background-position: right 0.75rem center;
+	background-size: 1em;
+}
+
+select:hover { border-color: var(--text-muted); }
+select:focus {
+	border-color: var(--border-accent);
+	box-shadow: 0 0 0 3px var(--accent-subtle);
+}
+
+/* ── Product Info ── */
+.product-info {
+	display: flex;
+	align-items: baseline;
+	gap: 1rem;
+	flex-wrap: wrap;
+}
+
+.product-info h2 {
+	margin: 0;
+	font-size: 1.15rem;
+	font-weight: 600;
+}
+
+.product-url {
+	font-size: 0.8rem;
+	color: var(--accent);
+	text-decoration: none;
+	transition: color var(--transition);
+}
+
+.product-url:hover {
+	color: var(--text-primary);
+	text-decoration: underline;
+}
+
+/* ── Section Titles ── */
+.section-title {
+	margin: 0 0 1rem;
+	font-size: 0.95rem;
+	font-weight: 600;
+	color: var(--text-secondary);
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+}
+
+/* ── Chart ── */
+.chart-wrapper {
+	position: relative;
+	height: 380px;
+}
+
+/* ── Loading Overlay ── */
+.loading {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: rgba(13, 17, 23, 0.6);
+	backdrop-filter: blur(4px);
+	border-radius: 8px;
+	opacity: 0;
+	pointer-events: none;
+	transition: opacity 0.3s ease;
+}
+
+.loading.active {
+	opacity: 1;
+	pointer-events: all;
+}
+
+.spinner {
+	width: 32px;
+	height: 32px;
+	border: 3px solid var(--border-default);
+	border-top-color: var(--accent);
+	border-radius: 50%;
+	animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Stats Table ── */
+.table-wrapper {
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+}
+
+table {
+	width: 100%;
+	border-collapse: separate;
+	border-spacing: 0;
+	font-size: 0.875rem;
+}
+
+thead th {
+	text-align: left;
+	padding: 0.75rem 1rem;
+	font-weight: 600;
+	font-size: 0.75rem;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	color: var(--text-muted);
+	border-bottom: 1px solid var(--border-default);
+	white-space: nowrap;
+}
+
+tbody td {
+	padding: 0.75rem 1rem;
+	border-bottom: 1px solid var(--border-default);
+	vertical-align: middle;
+}
+
+tbody tr:last-child td {
+	border-bottom: none;
+}
+
+tbody tr {
+	transition: background var(--transition);
+}
+
+tbody tr:hover {
+	background: var(--bg-card-hover);
+}
+
+/* Condition badge */
+.cond-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+	font-weight: 600;
+	font-size: 0.8rem;
+	letter-spacing: 0.03em;
+}
+
+.cond-dot {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	flex-shrink: 0;
+}
+
+/* Price cells */
+.price-val {
+	font-weight: 600;
+	font-variant-numeric: tabular-nums;
+	color: var(--text-primary);
+}
+
+.price-date {
+	display: block;
+	font-size: 0.7rem;
+	color: var(--text-muted);
+	margin-top: 2px;
+}
+
+.price-low .price-val { color: var(--green); }
+.price-high .price-val { color: var(--red); }
+
+/* ── Empty State ── */
+.empty-state {
+	text-align: center;
+	padding: 4rem 1rem;
+	color: var(--text-muted);
+}
+
+.empty-icon {
+	font-size: 3rem;
+	margin-bottom: 0.75rem;
+	opacity: 0.5;
+}
+
+.empty-state p {
+	margin: 0;
+	font-size: 0.95rem;
+}
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+	.controls { flex-direction: column; align-items: stretch; }
+	.product-info { flex-direction: column; gap: 0.25rem; }
+	.chart-wrapper { height: 260px; }
+	header { padding: 1rem; }
+	.container { padding: 1rem; gap: 1rem; }
+}

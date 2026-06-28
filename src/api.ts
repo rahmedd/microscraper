@@ -14,6 +14,7 @@ import {
 	createProductSchema,
 	updateProductSchema,
 } from './validation'
+import { serveStatic } from '@hono/node-server/serve-static'
 
 checkEnvVars()
 
@@ -128,6 +129,49 @@ honoApp.get('/products/:id/prices', vValidator('param', idParamSchema), async (c
 	return c.json(productPriceChanges)
 })
 
+honoApp.get('/products/:id/stats', vValidator('param', idParamSchema), async (c) => {
+	const { id } = c.req.valid('param')
+	const numericId = Number(id)
+
+	const allPrices = await db.select()
+		.from(prices)
+		.where(eq(prices.productId, numericId))
+
+	// Group by condition
+	const grouped: Record<string, typeof allPrices> = {}
+	for (const p of allPrices) {
+		const key = p.condition
+		if (!grouped[key]) grouped[key] = []
+		grouped[key].push(p)
+	}
+
+	const stats = Object.entries(grouped).map(([condition, rows]) => {
+		const validRows = rows.filter(r => r.price !== null)
+		
+		const sorted = [...validRows].sort((a, b) => a.price! - b.price!)
+		const byChrono = [...rows].sort((a, b) =>
+			new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+		)
+		
+		const lowest = sorted[0]
+		const highest = sorted[sorted.length - 1]
+		const current = byChrono[byChrono.length - 1]!
+		const avg = validRows.length > 0 
+			? Math.round(validRows.reduce((s, r) => s + r.price!, 0) / validRows.length)
+			: 0
+
+		return {
+			condition,
+			lowest: lowest ? { price: lowest.price, date: lowest.createdAt } : null,
+			highest: highest ? { price: highest.price, date: highest.createdAt } : null,
+			current: { price: current.price, date: current.createdAt },
+			average: avg,
+		}
+	})
+
+	return c.json(stats)
+})
+
 // honoApp.post('/prices', async (c) => {
 // 	const { productId, price, sale, condition } = await c.req.json()
 // 	const newPrice = await db.insert(prices).values({ productId, price, sale, condition }).returning()
@@ -147,8 +191,12 @@ honoApp.get('/products/:id/prices', vValidator('param', idParamSchema), async (c
 // 	return c.json(deletedPrice)
 // })
 
+const rootApp = new Hono()
+rootApp.route('/', honoApp)
+rootApp.use('/*', serveStatic({ root: './public' }))
+
 const server = serve({
-	fetch: honoApp.fetch,
+	fetch: rootApp.fetch,
 	port: Number(process.env.API_PORT!)
 }, (info) => {
 	logger.info(`Server is running on http://localhost:${info.port}`)

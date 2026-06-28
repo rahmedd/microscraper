@@ -39,7 +39,7 @@ export const products = sqliteTable('products', {
 export const prices = sqliteTable('prices', {
 	id: int().primaryKey({ autoIncrement: true }),
 	productId: int().references(() => products.id),
-	price: int().notNull(),
+	price: int(),
 	sale: int({ mode: 'boolean' }).notNull().default(false),
 	condition: text({ enum: ['NEW', 'OPENBOX', 'REFURB', 'USED'] }).notNull(),
 	createdAt: int({ mode: 'timestamp' })

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>MicroScrape — Price Tracker</title>
+	<meta name="description"
+		content="Track product price history across conditions. View charts, lowest prices, and historical trends.">
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="/css/style.css">
+	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+</head>
+
+<body>
+	<header>
+		<div class="header-inner">
+			<h1 id="site-title">microscrape</h1>
+			<p class="tagline">Product price history tracker</p>
+		</div>
+	</header>
+
+	<main class="container">
+		<section class="controls card" id="product-controls">
+			<label for="product-select">Product</label>
+			<select id="product-select">
+				<option value="">Loading products…</option>
+			</select>
+		</section>
+
+		<section class="product-info card" id="product-info" style="display:none;">
+			<h2 id="product-name">—</h2>
+			<a id="product-link" href="#" target="_blank" rel="noopener" class="product-url">View on store →</a>
+		</section>
+
+		<section class="chart-section card" id="chart-section" style="display:none;">
+			<h3 class="section-title">Price History</h3>
+			<div class="chart-wrapper">
+				<canvas id="priceChart"></canvas>
+				<div class="loading" id="loadingOverlay">
+					<div class="spinner"></div>
+				</div>
+			</div>
+		</section>
+
+		<section class="stats-section card" id="stats-section" style="display:none;">
+			<h3 class="section-title">Price Statistics</h3>
+			<div class="table-wrapper">
+				<table id="stats-table">
+					<thead>
+						<tr>
+							<th>Condition</th>
+							<th>Current</th>
+							<th>Lowest</th>
+							<th>Highest</th>
+							<th>Average</th>
+						</tr>
+					</thead>
+					<tbody id="stats-body"></tbody>
+				</table>
+			</div>
+		</section>
+
+		<section class="empty-state" id="empty-state">
+			<div class="empty-icon">📊</div>
+			<p>Select a product above to view price history</p>
+		</section>
+	</main>
+
+	<script src="/js/app.js"></script>
+</body>
+
+</html>

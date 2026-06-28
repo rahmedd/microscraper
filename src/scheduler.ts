@@ -108,7 +108,7 @@ const task = cron.schedule(CRON_SCHEDULE, async () => {
 								process.env.SLACK_CHANNEL_ID!,
 								message
 							)
-							await insertPrice(p.id, lastKnownPrice.sale, 0, lastKnownPrice.condition)
+							await insertPrice(p.id, lastKnownPrice.sale, null, lastKnownPrice.condition)
 						}
 					}
 				}

@@ -86,7 +86,7 @@ export async function getProductAndLastPrice(url: string, condition: PRICE_COND,
 	return null
 }
 
-export async function insertPrice(productId: number, sale: boolean, price: number, condition: PRICE_COND) {
+export async function insertPrice(productId: number, sale: boolean, price: number | null, condition: PRICE_COND) {
 	await db.insert(prices).values({
 		productId: productId,
 		sale: sale,
